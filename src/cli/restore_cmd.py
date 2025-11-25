@@ -7,10 +7,10 @@ import zipfile
 import subprocess
 from typing import Optional
 
-from src.utils.hash_utils import calculate_sha256
-from src.db_connectors.postgres_connector import PostgresConnector
-from src.db_connectors.mysql_connector import MySQLConnector
-from src.db_connectors.mongo_connector import MongoConnector
+from utils.hash_utils import calculate_sha256
+from db_connectors.postgres_connector import PostgresConnector
+from db_connectors.mysql_connector import MySQLConnector
+from db_connectors.mongo_connector import MongoConnector
 
 
 app = typer.Typer(help="Comandos para restauración de bases de datos.")
