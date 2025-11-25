@@ -1,0 +1,38 @@
+# CLI
+typer[all]
+rich
+pyyaml
+
+# DB clients
+psycopg2-binary
+pymysql
+mysqlclient
+pymongo
+
+# Cloud
+boto3
+google-cloud-storage
+azure-storage-blob
+
+# Compression / Utils
+zstandard
+lz4
+psutil
+
+# Logging
+structlog
+python-json-logger
+
+# Testing
+pytest
+docker
+
+
+#Utilidades
+psycopg2
+pymysql
+pymongo
+python-dotenv
+PyYAML
+colorlog
+cryptography

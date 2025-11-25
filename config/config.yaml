@@ -1,0 +1,24 @@
+postgres:
+  host: localhost
+  port: 5432
+  user: test
+  password: test123
+  database: sampledb
+
+mysql:
+  host: localhost
+  port: 3306
+  user: test
+  password: test123
+  database: sampledb
+
+mongo:
+  host: localhost
+  port: 27017
+  user: test
+  password: test123
+  database: sampledb
+
+backup:
+  output_dir: ./backups
+  timestamp_format: "%Y-%m-%d_%H-%M-%S"

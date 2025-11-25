@@ -1,0 +1,10 @@
+__pycache__/
+#.env
+*.pyc
+poetry.lock
+venv/
+.idea/
+.vscode/
+dist/
+build/
+BackupProject
