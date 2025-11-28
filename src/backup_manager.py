@@ -260,59 +260,41 @@ class BackupManager:
 
             return entry
 
-        # ==========================================================
-        #  BASES NORMALIZADAS (MySQL, PostgreSQL, MongoDB)
-        # ==========================================================
+       # ---------------------------------------------------------
+# BASES NORMALIZADAS (MySQL, PostgreSQL, MongoDB)
+# ---------------------------------------------------------
 
-        # Seleccionar clase conector
+# Seleccionar clase conector
         ConnectorClass = DatabaseSelector.get_connector_class(db_type)
         connector = ConnectorClass(host=host, port=port, user=user, password=password, database=database)
 
-        # Crear dump temporal
+        # Crear dump temporal en memoria/temporal sin guardarlo en el disco de forma visible
         raw_name = f"{db_type}_{database}_{timestamp}.dump"
         tmp_dir = Path("/tmp") if Path("/tmp").exists() else Path(".")
         raw_path = tmp_dir / raw_name
 
-        connector.dump_database(str(raw_path))
+        try:
+            connector.dump_database(str(raw_path))  # Genera el dump temporal
 
-        # Comprimir si aplica
-        if compression:
-            compressed_files = compress.compress_file(str(raw_path), [compression])
-            if not compressed_files:
-                raise RuntimeError("No se pudo comprimir el archivo.")
-            final_path = compressed_files[0]
-        else:
-            final_path = str(raw_path)
+            # Comprimir si aplica
+            if compression:
+                compressed_files = compress.compress_file(str(raw_path), [compression])
+                if not compressed_files:
+                    raise RuntimeError("No se pudo comprimir el archivo.")
+                final_path = compressed_files[0]
+            else:
+                final_path = str(raw_path)
 
-        # Hash checksum
-        sha = BackupVerifier.file_sha256(final_path)
+            # Hash checksum
+            sha = BackupVerifier.file_sha256(final_path)
 
-        # Guardar localmente
-        saved_path = self.local.save_file(final_path)
+            # Guardar localmente
+            saved_path = self.local.save_file(final_path)
 
-        # Subida a la nube
-        cloud_url = None
-        if upload_to_cloud and self.cloud:
-            remote_name = f"{db_type}/{Path(saved_path).name}"
-            try:
-                remote = self.cloud.save_file(str(saved_path), remote_name)
-                cloud_url = f"cloud://{remote}"
-            except Exception as e:
-                print(f"[WARN] No se pudo subir a la nube: {e}")
-
-        # Registrar en historial
-        entry = self.history.add_entry(
-            operation="backup",
-            db_type=db_type,
-            database=database,
-            file_path=str(saved_path),
-            hash=sha,
-            status="success",
-            message=None,
-            cloud_url=cloud_url
-        )
-
-        return entry
+        finally:
+            # Eliminar dump temporal siempre
+            if raw_path.exists():
+                raw_path.unlink()
 
     # ==========================================================
     # RESTORE

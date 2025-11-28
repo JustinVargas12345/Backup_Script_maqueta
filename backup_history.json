@@ -1,0 +1,88 @@
+[
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "backups\\sqlserver_PruebaBackup_20251127_161748.dump",
+        "cloud": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "backups\\sqlserver_PruebaBackup_20251128_110151.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": null,
+        "cloud": null,
+        "status": "error",
+        "message": "SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\\PruebaBackup_full_20251128_142832.bak"
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": null,
+        "cloud": null,
+        "status": "error",
+        "message": "SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\\PruebaBackup_full_20251128_144226.bak"
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": null,
+        "cloud": null,
+        "status": "error",
+        "message": "SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\\PruebaBackup_full_20251128_150424.bak"
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251128_150909.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251128_151703.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251128_154010.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251128_154050.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_diff_20251128_154818.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_log_20251128_154836.trn",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    }
+]

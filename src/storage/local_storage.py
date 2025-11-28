@@ -1,12 +1,11 @@
 from pathlib import Path
 from typing import Optional, List
+import shutil
 
 
 class LocalStorage:
     """
     Maneja el almacenamiento local de archivos de backup.
-    Permite guardar, listar y borrar archivos dentro de un
-    directorio específico del sistema.
     """
 
     def __init__(self, base_dir: str = "backups"):
@@ -20,20 +19,17 @@ class LocalStorage:
     def save_file(self, src_path: str, dest_name: Optional[str] = None) -> Path:
         """
         Guarda un archivo en el directorio de backups.
-        - src_path: archivo generado (ej: backup comprimido)
-        - dest_name: nombre final del archivo en la carpeta local
         """
         src = Path(src_path)
 
         if not src.exists():
             raise FileNotFoundError(f"El archivo '{src_path}' no existe.")
 
-        if dest_name:
-            dest = self.base_path / dest_name
-        else:
-            dest = self.base_path / src.name
+        dest = self.base_path / (dest_name if dest_name else src.name)
 
-        dest.write_bytes(src.read_bytes())
+        # Copia segura sin cargar todo el archivo en memoria
+        shutil.copy2(src, dest)
+
         return dest
 
     # ============================================================

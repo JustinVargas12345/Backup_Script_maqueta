@@ -1,8 +1,6 @@
 # src/utils/db_selector.py
-from typing import Tuple, Type
-from pathlib import Path
+from typing import Type
 
-# import connectors (ajusta si tus archivos están en otro paquete)
 from src.db_connectors.postgres_connector import PostgresConnector
 from src.db_connectors.mysql_connector import MySQLConnector
 from src.db_connectors.mongo_connector import MongoConnector
@@ -10,16 +8,24 @@ from src.db_connectors.mongo_connector import MongoConnector
 
 class DatabaseSelector:
     """
-    Selector de conectores según el nombre del motor.
+    Selecciona el conector adecuado según el motor de base de datos.
     """
 
     @staticmethod
-    def get_connector_class(engine: str):
+    def get_connector_class(engine: str) -> Type:
+        if not engine:
+            raise ValueError("No se especificó un motor de base de datos.")
+
         e = engine.lower()
-        if e in ("postgres", "postgresql"):
+
+        # Variantes comunes aceptadas
+        if e in ("postgres", "postgresql", "pg", "psql"):
             return PostgresConnector
-        if e in ("mysql",):
+
+        if e in ("mysql", "mariadb"):
             return MySQLConnector
-        if e in ("mongo", "mongodb"):
+
+        if e in ("mongo", "mongodb", "mongo-db"):
             return MongoConnector
+
         raise ValueError(f"Motor no soportado: {engine}")

@@ -1,0 +1,121 @@
+2025-11-27 14:13:54,129 [INFO] Backup FULL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251127_141353.bak
+2025-11-27 14:13:54,779 [INFO] Backup DIFERENCIAL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_diff_20251127_141354.bak
+2025-11-27 14:13:55,404 [INFO] Backup LOG completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_log_20251127_141354.trn
+2025-11-27 15:47:23,537 [INFO] Iniciando backup solicitado por CLI...
+2025-11-27 15:51:44,935 [INFO] Iniciando backup solicitado por CLI...
+2025-11-27 15:51:44,935 [ERROR] Error de conexión: 'SQLServerConnector' object has no attribute 'test_connection'
+2025-11-27 15:51:56,727 [INFO] Iniciando backup solicitado por CLI...
+2025-11-27 15:51:56,727 [ERROR] Error de conexión: 'SQLServerConnector' object has no attribute 'test_connection'
+2025-11-27 16:09:28,044 [INFO] Iniciando backup solicitado por CLI...
+2025-11-27 16:09:28,347 [INFO] Conexión validada correctamente.
+2025-11-27 16:09:28,351 [ERROR] Error creando el backup: 'SQLServerBackup' object has no attribute 'run_backup'
+2025-11-27 16:17:48,570 [INFO] Iniciando backup solicitado por CLI...
+2025-11-27 16:17:48,862 [INFO] Conexión validada correctamente.
+2025-11-27 16:17:49,465 [INFO] Backup creado: backups\sqlserver_PruebaBackup_20251127_161748.dump
+2025-11-27 16:17:49,468 [INFO] Backup finalizado correctamente.
+2025-11-28 14:28:32,309 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 14:28:32,309 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 14:28:32,622 [INFO] Conexión validada correctamente.
+2025-11-28 14:28:32,622 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 14:28:33,209 [ERROR] Backup FULL falló, archivo no encontrado: backups\PruebaBackup_full_20251128_142832.bak
+2025-11-28 14:28:33,211 [ERROR] Fallo en la generación del backup: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_142832.bak
+Traceback (most recent call last):
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 248, in run_backup
+    produced = execute_backup(dbtype, connector, str(backup_path), backup_type="full")
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 132, in execute_backup
+    return backup_engine.full_backup(backup_path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\sqlserver_backup\core.py", line 59, in full_backup
+    raise RuntimeError(f"SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: {output_file}")
+RuntimeError: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_142832.bak
+2025-11-28 14:42:26,099 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 14:42:26,099 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 14:42:26,402 [INFO] Conexión validada correctamente.
+2025-11-28 14:42:26,403 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 14:42:26,981 [ERROR] Backup FULL falló, archivo no encontrado: backups\PruebaBackup_full_20251128_144226.bak
+2025-11-28 14:42:26,982 [ERROR] Fallo en la generación del backup: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_144226.bak
+Traceback (most recent call last):
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 248, in run_backup
+    produced = execute_backup(dbtype, connector, str(backup_path), backup_type="full")
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 132, in execute_backup
+    return backup_engine.full_backup(backup_path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\sqlserver_backup\core.py", line 59, in full_backup
+    raise RuntimeError(f"SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: {output_file}")
+RuntimeError: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_144226.bak
+2025-11-28 15:04:24,090 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:04:24,090 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:04:24,392 [INFO] Conexión validada correctamente.
+2025-11-28 15:04:24,393 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 15:04:24,972 [ERROR] Backup FULL falló, archivo no encontrado: backups\PruebaBackup_full_20251128_150424.bak
+2025-11-28 15:04:24,972 [ERROR] Error en backup de SQL Server: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_150424.bak
+2025-11-28 15:04:24,972 [ERROR] Fallo en la generación del backup: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_150424.bak
+Traceback (most recent call last):
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 553, in run_backup
+    produced = execute_backup(dbtype, connector, str(backup_path), backup_type="full")
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\cli\backup_cmd.py", line 436, in execute_backup
+    produced = run_sqlserver_backup(
+        host=connector.host,
+    ...<3 lines>...
+        output_path=backup_path
+    )
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\sqlserver_backup\__init__.py", line 110, in run_sqlserver_backup
+    return backup_engine.full_backup(output_path)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Justin\dbbackup\Backup_Script_maqueta\src\sqlserver_backup\core.py", line 59, in full_backup
+    raise RuntimeError(f"SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: {output_file}")
+RuntimeError: SQLServerBackup: Backup FULL finalizado, pero el archivo no existe: backups\PruebaBackup_full_20251128_150424.bak
+2025-11-28 15:09:09,144 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:09:09,145 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:09:09,445 [INFO] Conexión validada correctamente.
+2025-11-28 15:09:09,445 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 15:09:10,663 [INFO] Backup FULL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_150909.bak
+2025-11-28 15:09:10,663 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_150909.bak
+2025-11-28 15:09:10,681 [INFO] === Backup finalizado correctamente ===
+2025-11-28 15:17:03,321 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:17:03,321 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:17:03,621 [INFO] Conexión validada correctamente.
+2025-11-28 15:17:03,621 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 15:17:04,606 [INFO] Backup FULL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_151703.bak
+2025-11-28 15:17:04,607 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_151703.bak
+2025-11-28 15:17:04,624 [INFO] === Backup finalizado correctamente ===
+2025-11-28 15:40:10,044 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:40:10,044 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:40:10,351 [INFO] Conexión validada correctamente.
+2025-11-28 15:40:10,351 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 15:40:11,361 [INFO] Backup FULL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_154010.bak
+2025-11-28 15:40:11,361 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_154010.bak
+2025-11-28 15:40:11,378 [INFO] === Backup finalizado correctamente ===
+2025-11-28 15:40:49,951 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:40:49,952 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:40:50,250 [INFO] Conexión validada correctamente.
+2025-11-28 15:40:50,251 [INFO] execute_backup -> dbtype=sqlserver path=backups
+2025-11-28 15:40:51,242 [INFO] Backup FULL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_154050.bak
+2025-11-28 15:40:51,242 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_full_20251128_154050.bak
+2025-11-28 15:40:51,260 [INFO] === Backup finalizado correctamente ===
+2025-11-28 15:48:18,111 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:48:18,111 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:48:18,412 [INFO] Conexión validada correctamente.
+2025-11-28 15:48:18,412 [INFO] execute_backup -> dbtype=sqlserver path=backups type=diff
+2025-11-28 15:48:19,359 [INFO] Backup DIFERENCIAL completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_diff_20251128_154818.bak
+2025-11-28 15:48:19,359 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_diff_20251128_154818.bak
+2025-11-28 15:48:19,376 [INFO] === Backup finalizado correctamente ===
+2025-11-28 15:48:36,252 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 15:48:36,252 [INFO] Validando conexión para 'sqlserver'
+2025-11-28 15:48:36,553 [INFO] Conexión validada correctamente.
+2025-11-28 15:48:36,554 [INFO] execute_backup -> dbtype=sqlserver path=backups type=log
+2025-11-28 15:48:37,459 [INFO] Backup LOG completado | Archivo: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_log_20251128_154836.trn
+2025-11-28 15:48:37,459 [INFO] Backup producido en: C:\Program Files\Microsoft SQL Server\MSSQL17.SQLEXPRESS\MSSQL\Backup\PruebaBackup_log_20251128_154836.trn
+2025-11-28 15:48:37,477 [INFO] === Backup finalizado correctamente ===
+2025-11-28 16:39:43,320 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 16:39:43,321 [INFO] Validando conexión para 'postgres'
+2025-11-28 16:39:43,325 [WARNING] pg_isready no está disponible en el PATH.
+2025-11-28 16:39:43,336 [ERROR] validate_connection returned False
+2025-11-28 16:46:06,178 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 16:46:06,178 [INFO] Validando conexión para 'postgres'
+2025-11-28 16:46:06,182 [WARNING] pg_isready no está disponible en el PATH.
+2025-11-28 16:46:06,195 [ERROR] validate_connection returned False
+2025-11-28 16:54:54,754 [INFO] === Iniciando backup desde CLI ===
+2025-11-28 16:54:54,754 [INFO] Validando conexión para 'postgres'
+2025-11-28 16:54:54,762 [ERROR] Postgres validation error: [WinError 2] The system cannot find the file specified
+2025-11-28 16:54:54,774 [ERROR] validate_connection returned False

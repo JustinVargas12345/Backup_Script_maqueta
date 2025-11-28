@@ -1,11 +1,15 @@
 import typer
-from .backup_cmd import backup_app
-from .restore_cmd import restore_app
-from .config_cmd import config_app
-from .history_cmd import history_app
-from .utils_cmd import utils_app
+
+# Importar los subcomandos CORRECTAMENTE
+from cli.backup_cmd import app as backup_app
+from cli.restore_cmd import app as restore_app
+from cli.config_cmd import app as config_app
+from cli.history_cmd import app as history_app
+from cli.utils_cmd import app as utils_app
+
 
 app = typer.Typer(help="Herramienta CLI para realizar backups y restauraciones de bases de datos.")
+
 
 # Registrar subcomandos
 app.add_typer(backup_app, name="backup", help="Operaciones de respaldo")
@@ -17,6 +21,7 @@ app.add_typer(utils_app, name="utils", help="Utilidades adicionales")
 
 def main():
     app()
+
 
 if __name__ == "__main__":
     main()

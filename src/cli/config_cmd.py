@@ -16,19 +16,19 @@ DEFAULT_CONFIG = {
         "host": "localhost",
         "port": 5432,
         "user": "postgres",
-        "password": "postgres"
+        "password": "postgres",
     },
     "mysql": {
         "host": "localhost",
         "port": 3306,
         "user": "root",
-        "password": "root"
+        "password": "root",
     },
     "mongo": {
         "host": "localhost",
         "port": 27017,
         "user": "",
-        "password": ""
+        "password": "",
     },
     "backup": {
         "output_dir": "backups/",
@@ -39,13 +39,13 @@ DEFAULT_CONFIG = {
         "bucket": "",
         "access_key": "",
         "secret_key": "",
-        "region": ""
+        "region": "",
     }
 }
 
 
 # -------------------------------------------------------------
-# Crear archivo de configuración si no existe
+# Crear archivo config si no existe
 # -------------------------------------------------------------
 def create_default_config():
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -54,18 +54,25 @@ def create_default_config():
 
 
 # -------------------------------------------------------------
-# Leer config
+# Leer configuración completa
 # -------------------------------------------------------------
 def load_config() -> dict:
     if not CONFIG_PATH.exists():
         create_default_config()
-    return toml.load(CONFIG_PATH)
+
+    try:
+        return toml.load(CONFIG_PATH)
+    except Exception:
+        # archivo roto → se regenera
+        create_default_config()
+        return DEFAULT_CONFIG
 
 
 # -------------------------------------------------------------
-# Guardar config
+# Guardar configuración
 # -------------------------------------------------------------
 def save_config(data: dict):
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_PATH, "w") as f:
         toml.dump(data, f)
 
@@ -75,9 +82,7 @@ def save_config(data: dict):
 # -------------------------------------------------------------
 @app.command("show")
 def show_config():
-    """
-    Muestra la configuración actual del sistema.
-    """
+    """Muestra la configuración del sistema."""
     config = load_config()
     typer.secho("Configuración actual:\n", fg=typer.colors.CYAN)
     typer.echo(toml.dumps(config))
@@ -88,27 +93,21 @@ def show_config():
 # -------------------------------------------------------------
 @app.command("reset")
 def reset_config():
-    """
-    Restablece config.toml a su estado por defecto.
-    """
+    """Restaura config.toml a valores por defecto."""
     create_default_config()
     typer.secho("✔ Configuración restablecida a valores por defecto.", fg=typer.colors.GREEN)
 
 
 # -------------------------------------------------------------
-# COMMAND: actualizar una sección completa
+# COMMAND: modificar un valor dentro de la config
 # -------------------------------------------------------------
 @app.command("set")
 def set_config_value(
-        section: str = typer.Argument(..., help="Sección del config (postgres, mysql, mongo, backup, cloud)."),
-        key: str = typer.Argument(..., help="Clave a modificar."),
-        value: str = typer.Argument(..., help="Nuevo valor para la clave.")
+    section: str = typer.Argument(..., help="postgres, mysql, mongo, backup, cloud"),
+    key: str = typer.Argument(..., help="Clave a modificar."),
+    value: str = typer.Argument(..., help="Nuevo valor.")
 ):
-    """
-    Modifica un valor dentro de config.toml.
-    Ejemplo:
-        backup-script config set backup compression zip
-    """
+    """Modifica una clave del archivo de configuración."""
 
     config = load_config()
 
@@ -118,14 +117,13 @@ def set_config_value(
     if key not in config[section]:
         raise typer.BadParameter(f"La clave '{key}' no existe en la sección '{section}'")
 
-    # conversión automática (int, bool, str)
+    # Conversión automática inteligentemente
     if value.isdigit():
         value = int(value)
-    elif value.lower() in ["true", "false"]:
+    elif value.lower() in ("true", "false"):
         value = value.lower() == "true"
 
     config[section][key] = value
-
     save_config(config)
 
     typer.secho(f"✔ {section}.{key} actualizado correctamente.", fg=typer.colors.GREEN)
@@ -136,15 +134,13 @@ def set_config_value(
 # -------------------------------------------------------------
 @app.command("cloud")
 def set_cloud_provider(
-        provider: str = typer.Option(..., help="aws | gcp | azure"),
-        bucket: str = typer.Option(..., help="Nombre del bucket o contenedor."),
-        access_key: str = typer.Option(..., help="Clave de acceso."),
-        secret_key: str = typer.Option(..., help="Clave secreta."),
-        region: Optional[str] = typer.Option(None, help="Región del proveedor.")
+    provider: str = typer.Option(..., help="aws | gcp | azure"),
+    bucket: str = typer.Option(..., help="Nombre del bucket/contenedor."),
+    access_key: str = typer.Option(..., help="Clave de acceso."),
+    secret_key: str = typer.Option(..., help="Clave secreta."),
+    region: Optional[str] = typer.Option(None, help="Región del proveedor.")
 ):
-    """
-    Configura el apartado de nube.
-    """
+    """Configura la sección cloud del archivo de configuración."""
 
     allowed = ["aws", "gcp", "azure"]
     if provider not in allowed:
@@ -156,6 +152,7 @@ def set_cloud_provider(
     config["cloud"]["bucket"] = bucket
     config["cloud"]["access_key"] = access_key
     config["cloud"]["secret_key"] = secret_key
+
     if region:
         config["cloud"]["region"] = region
 

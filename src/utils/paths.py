@@ -1,3 +1,4 @@
+
 import os
 from pathlib import Path
 
@@ -24,4 +25,10 @@ def get_backup_path(base_dir: str, filename: str):
     Construye rutas absolutas.
     """
     ensure_dir(base_dir)
+    full_path = os.path.join(base_dir, filename)
+
+    # Log para verificar la ruta
+    print(f"Ruta completa para el backup: {full_path}")
     return os.path.join(base_dir, filename)
+
+
