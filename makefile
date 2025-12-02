@@ -25,3 +25,7 @@ lint:
 
 freeze:
 	pip freeze > requirements.txt
+
+.PHONY: build-image
+build-image:
+	docker build -t backup_script:local .

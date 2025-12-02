@@ -1,0 +1,326 @@
+[2025-12-01 09:24:34] ❌ ERROR: Conexión a PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not open output file "/dev/null": No such file or directory
+
+[2025-12-01 09:30:00] ❌ ERROR: Conexión a PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not open output file "/dev/null": No such file or directory
+
+[2025-12-01 09:33:46] ❌ ERROR: Conexión a PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not translate host name "localhost" to address: Non-recoverable failure in name resolution
+
+[2025-12-01 09:41:17] 🧪 Probando conexión PostgreSQL con pg_dump…
+[2025-12-01 09:41:18] ❌ ERROR: Conexión fallida. STDERR:
+pg_dump: error: could not fsync file "NUL": Bad file descriptor
+
+[2025-12-01 09:41:49] 🧪 Probando conexión PostgreSQL con pg_dump…
+[2025-12-01 09:41:50] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-01 09:41:50] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-01 09:41:50] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.EXE" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251201_094150.dump"
+[2025-12-01 09:41:50] Archivo destino: backups\postgres_postgres_20251201_094150.dump
+[2025-12-01 09:41:50] ✔️ Backup Postgres completado: backups\postgres_postgres_20251201_094150.dump
+[2025-12-01 09:41:50] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-01 10:00:57] ❌ ERROR: Conexión PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not translate host name "localhost" to address: Non-recoverable failure in name resolution
+
+[2025-12-01 10:02:00] ❌ ERROR: Conexión PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not translate host name "localhost" to address: Non-recoverable failure in name resolution
+
+[2025-12-01 10:02:25] ❌ ERROR: Conexión PostgreSQL fallida. STDERR:
+could not find a "pg_dump" to execute
+pg_dump: error: could not translate host name "localhost" to address: Non-recoverable failure in name resolution
+
+[2025-12-01 10:11:33] ❌ ERROR: Conexión PostgreSQL fallida. STDERR:
+pg_dump: error: could not generate restrict key
+
+[2025-12-01 10:26:16] 🧪 Probando conexión PostgreSQL con pg_dump…
+[2025-12-01 10:26:16] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-01 10:26:16] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-01 10:26:16] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.EXE" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251201_102616.dump"
+[2025-12-01 10:26:16] Archivo destino: backups\postgres_postgres_20251201_102616.dump
+[2025-12-01 10:26:17] ✔️ Backup Postgres completado: backups\postgres_postgres_20251201_102616.dump
+[2025-12-01 10:26:17] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-01 10:30:10] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 10:30:11] ❌ ERROR conexión PostgreSQL:
+pg_dump: error: could not fsync file "NUL": Bad file descriptor
+
+[2025-12-01 10:31:12] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 10:31:13] ❌ ERROR conexión PostgreSQL:
+pg_dump: error: could not fsync file "NUL": Bad file descriptor
+
+[2025-12-01 10:33:55] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 10:33:55] ✔️ Conexión PostgreSQL OK.
+[2025-12-01 10:36:07] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 10:36:07] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-01 10:36:07] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-01 10:36:07] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.EXE" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251201_103607.dump"
+[2025-12-01 10:36:07] Archivo destino: backups\postgres_postgres_20251201_103607.dump
+[2025-12-01 10:36:08] ✔️ Backup Postgres completado: backups\postgres_postgres_20251201_103607.dump
+[2025-12-01 10:36:08] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-01 11:59:42] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 11:59:43] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-01 11:59:43] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-01 11:59:43] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.EXE" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251201_115943.dump"
+[2025-12-01 11:59:43] Archivo destino: backups\postgres_postgres_20251201_115943.dump
+[2025-12-01 11:59:43] ✔️ Backup Postgres completado: backups\postgres_postgres_20251201_115943.dump
+[2025-12-01 11:59:43] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-01 13:45:11] 🧪 Probando conexión PostgreSQL…
+[2025-12-01 13:45:12] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-01 13:45:12] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-01 13:45:12] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.EXE" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251201_134512.dump"
+[2025-12-01 13:45:12] Archivo destino: backups\postgres_postgres_20251201_134512.dump
+[2025-12-01 13:45:12] ✔️ Backup Postgres completado: backups\postgres_postgres_20251201_134512.dump
+[2025-12-01 13:45:12] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-01 14:12:36] === INICIANDO BACKUP MYSQL (mysql) ===
+[2025-12-01 14:12:36] Comando ejecutado: C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.exe -h localhost -P 3306 -u root -pLaboratorio1 --databases mysql
+[2025-12-01 14:12:36] Archivo destino: backups\mysql_mysql_20251201_141236.dump.sql
+[2025-12-01 14:12:37] STDERR:
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+Warning: A partial dump from a server that has GTIDs will by default include the GTIDs of all transactions, even those that changed suppressed parts of the database. If you don't want to restore GTIDs, pass --set-gtid-purged=OFF. To make a complete dump, pass --all-databases --triggers --routines --events. 
+Warning: A dump from a server that has GTIDs enabled will by default include the GTIDs of all transactions, even those that were executed during its extraction and might not be represented in the dumped data. This might result in an inconsistent data dump. 
+In order to ensure a consistent backup of the database, pass --single-transaction or --lock-all-tables or --source-data. 
+
+[2025-12-01 14:12:37] ✔️ Backup MySQL completado: backups\mysql_mysql_20251201_141236.dump.sql
+[2025-12-01 14:12:37] === FIN BACKUP MYSQL (mysql) ===
+
+[2025-12-01 15:17:32] ❌ ERROR: No se encontró mongodump en PATH ni en ubicaciones conocidas.
+[2025-12-01 15:50:25] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-01 15:54:03] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-01 16:08:57] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 08:54:31] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 09:05:46] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 09:14:14] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 09:17:58] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 09:47:54] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 09:47:55] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 09:47:55] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_094755
+[2025-12-02 09:47:55] Directorio destino: backups\mongo_Algoritmo_20251202_094755
+[2025-12-02 09:47:55] STDERR:
+2025-12-02T09:47:55.649-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_094755\Algoritmo\Script.bson
+2025-12-02T09:47:55.661-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 09:47:55] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_094755
+[2025-12-02 09:47:55] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 09:52:09] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 10:03:51] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 10:03:52] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 10:03:52] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_100352
+[2025-12-02 10:03:52] Directorio destino: backups\mongo_Algoritmo_20251202_100352
+[2025-12-02 10:03:52] STDERR:
+2025-12-02T10:03:52.254-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_100352\Algoritmo\Script.bson
+2025-12-02T10:03:52.258-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 10:03:52] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_100352
+[2025-12-02 10:03:52] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 10:40:46] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 10:40:47] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 10:40:47] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_104047
+[2025-12-02 10:40:47] Directorio destino: backups\mongo_Algoritmo_20251202_104047
+[2025-12-02 10:40:47] STDERR:
+2025-12-02T10:40:47.760-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_104047\Algoritmo\Script.bson
+2025-12-02T10:40:47.763-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 10:40:47] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_104047
+[2025-12-02 10:40:47] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 11:00:33] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 11:00:35] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 11:00:35] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_110035
+[2025-12-02 11:00:35] Directorio destino: backups\mongo_Algoritmo_20251202_110035
+[2025-12-02 11:00:35] STDERR:
+2025-12-02T11:00:35.569-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_110035\Algoritmo\Script.bson
+2025-12-02T11:00:35.571-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 11:00:35] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_110035
+[2025-12-02 11:00:35] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:18:51] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:18:52] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:18:52] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_141852
+[2025-12-02 14:18:52] Directorio destino: backups\mongo_Algoritmo_20251202_141852
+[2025-12-02 14:18:52] STDERR:
+2025-12-02T14:18:52.708-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_141852\Algoritmo\Script.bson
+2025-12-02T14:18:52.711-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:18:52] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_141852
+[2025-12-02 14:18:52] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:27:04] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:27:05] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:27:05] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_142705
+[2025-12-02 14:27:05] Directorio destino: backups\mongo_Algoritmo_20251202_142705
+[2025-12-02 14:27:05] STDERR:
+2025-12-02T14:27:05.303-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_142705\Algoritmo\Script.bson
+2025-12-02T14:27:05.306-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:27:05] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_142705
+[2025-12-02 14:27:05] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:28:49] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:28:50] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:28:50] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_142850
+[2025-12-02 14:28:50] Directorio destino: backups\mongo_Algoritmo_20251202_142850
+[2025-12-02 14:28:50] STDERR:
+2025-12-02T14:28:50.080-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_142850\Algoritmo\Script.bson
+2025-12-02T14:28:50.083-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:28:50] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_142850
+[2025-12-02 14:28:50] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:31:06] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:31:07] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:31:07] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_143107
+[2025-12-02 14:31:07] Directorio destino: backups\mongo_Algoritmo_20251202_143107
+[2025-12-02 14:31:07] STDERR:
+2025-12-02T14:31:07.558-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_143107\Algoritmo\Script.bson
+2025-12-02T14:31:07.561-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:31:07] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_143107
+[2025-12-02 14:31:07] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:31:59] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:32:00] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:32:00] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_143200
+[2025-12-02 14:32:00] Directorio destino: backups\mongo_Algoritmo_20251202_143200
+[2025-12-02 14:32:00] STDERR:
+2025-12-02T14:32:00.258-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_143200\Algoritmo\Script.bson
+2025-12-02T14:32:00.260-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:32:00] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_143200
+[2025-12-02 14:32:00] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:36:28] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:36:29] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:36:29] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_143629
+[2025-12-02 14:36:29] Directorio destino: backups\mongo_Algoritmo_20251202_143629
+[2025-12-02 14:36:29] STDERR:
+2025-12-02T14:36:29.184-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_143629\Algoritmo\Script.bson
+2025-12-02T14:36:29.187-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:36:29] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_143629
+[2025-12-02 14:36:29] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 14:36:49] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 14:36:50] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 14:36:50] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_143650
+[2025-12-02 14:36:50] Directorio destino: backups\mongo_Algoritmo_20251202_143650
+[2025-12-02 14:36:50] STDERR:
+2025-12-02T14:36:50.756-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_143650\Algoritmo\Script.bson
+2025-12-02T14:36:50.759-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 14:36:50] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_143650
+[2025-12-02 14:36:50] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 15:33:54] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 15:33:55] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 15:33:55] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_153355
+[2025-12-02 15:33:55] Directorio destino: backups\mongo_Algoritmo_20251202_153355
+[2025-12-02 15:33:55] STDERR:
+2025-12-02T15:33:55.491-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_153355\Algoritmo\Script.bson
+2025-12-02T15:33:55.495-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 15:33:55] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_153355
+[2025-12-02 15:33:55] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 15:42:00] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 15:42:00] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 15:42:00] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_154200
+[2025-12-02 15:42:00] Directorio destino: backups\mongo_Algoritmo_20251202_154200
+[2025-12-02 15:42:00] STDERR:
+2025-12-02T15:42:00.835-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_154200\Algoritmo\Script.bson
+2025-12-02T15:42:00.838-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 15:42:00] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_154200
+[2025-12-02 15:42:00] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 15:48:20] 🧪 Probando conexión PostgreSQL…
+[2025-12-02 15:48:21] ✔️ Conexión PostgreSQL exitosa.
+[2025-12-02 15:48:21] === INICIANDO BACKUP POSTGRES (postgres) ===
+[2025-12-02 15:48:21] Comando ejecutado: "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h "localhost" -p "5432" -U "postgres" -d "postgres" -F c -f "backups\postgres_postgres_20251202_154821.dump"
+[2025-12-02 15:48:21] Archivo destino: backups\postgres_postgres_20251202_154821.dump
+[2025-12-02 15:48:21] ✔️ Backup Postgres completado: backups\postgres_postgres_20251202_154821.dump
+[2025-12-02 15:48:21] === FIN BACKUP POSTGRES (postgres) ===
+
+[2025-12-02 16:01:28] mongodump encontrado en PATH: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE
+[2025-12-02 16:01:28] === INICIANDO BACKUP MONGO (Algoritmo) ===
+[2025-12-02 16:01:28] Comando ejecutado: C:\Program Files\MongoDB\Tools\bin\mongodump.EXE --host localhost --port 27017 --username admin --password Laboratorio1 --authenticationDatabase admin --db Algoritmo --out backups\mongo_Algoritmo_20251202_160128
+[2025-12-02 16:01:28] Directorio destino: backups\mongo_Algoritmo_20251202_160128
+[2025-12-02 16:01:28] STDERR:
+2025-12-02T16:01:28.837-0400	writing Algoritmo.Script to backups\mongo_Algoritmo_20251202_160128\Algoritmo\Script.bson
+2025-12-02T16:01:28.842-0400	done dumping Algoritmo.Script (0 documents)
+
+[2025-12-02 16:01:28] ✔️ Backup MONGO completado: backups\mongo_Algoritmo_20251202_160128
+[2025-12-02 16:01:28] === FIN BACKUP MONGO (Algoritmo) ===
+
+[2025-12-02 16:15:32] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:15:32] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:15:32] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:15:32] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:15:32] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:15:32] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:15:32] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:15:32] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:24:31] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:24:31] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:24:31] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:24:31] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:24:31] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:24:31] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:24:31] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:24:31] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:24:44] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:24:44] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:24:44] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:24:44] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:24:44] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:24:44] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:24:44] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:24:44] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:25:44] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:25:44] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:25:44] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:25:44] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:25:44] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:25:44] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:25:44] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:25:44] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:30:46] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:30:46] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:30:46] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:30:46] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:30:46] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:30:46] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:30:46] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:30:46] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:37:29] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:37:29] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:37:29] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:37:29] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:37:29] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:37:29] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:37:29] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:37:29] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:37:41] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:37:41] _find_mysql: buscando en rutas comunes de instalación
+[2025-12-02 16:37:41] _find_mysql: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:37:41] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:37:41] _find_mysqldump: buscando en rutas comunes de instalación
+[2025-12-02 16:37:41] _find_mysqldump: encontrado en ruta común -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:37:41] mysql_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysql.exe
+[2025-12-02 16:37:41] mysqldump_path -> C:\\Program Files\\MySQL\MySQL Server 9.5\bin\mysqldump.exe
+[2025-12-02 16:51:46] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:51:46] _find_mysql: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:51:46] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:51:46] _find_mysqldump: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:51:46] mysql_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:51:46] mysqldump_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE

@@ -9,6 +9,7 @@ from pathlib import Path
 import boto3
 from google.cloud import storage
 from azure.storage.blob import BlobServiceClient
+from utils.bin_checker import check_binaries, suggest_install_instructions, find_binaries
 
 
 app = typer.Typer(help="Comandos utilitarios: compresión, hash, cloud upload, paths.")
@@ -228,3 +229,26 @@ def get_size(file_path: str):
     typer.secho(f"Tamaño: {size_mb:.2f} MB", fg="blue")
 
     logging.info(f"get_size -> {file_path} tamaño {size_mb:.2f} MB")
+
+
+@app.command("check-binaries")
+def cli_check_binaries():
+    """Chequea la presencia de binarios externos necesarios y muestra sugerencias."""
+    found = find_binaries()
+    missing = [k for k, v in found.items() if not v]
+
+    for k, v in found.items():
+        if v:
+            typer.echo(f"{k}: ✔ -> {v}")
+        else:
+            typer.echo(f"{k}: ✖")
+
+    if missing:
+        typer.secho("\nFaltan binarios. Sugerencias de instalación:", fg=typer.colors.YELLOW)
+        suggestions = suggest_install_instructions()
+        for m in missing:
+            sugg = suggestions.get(m, "Ver documentación de instalación")
+            typer.echo(f"- {m}: {sugg}")
+        raise typer.Exit(code=2)
+    else:
+        typer.secho("Todos los binarios requeridos están presentes.", fg=typer.colors.GREEN)

@@ -1,47 +1,29 @@
 
 import typer
 import os
-import json
 from typing import Optional
 from pathlib import Path
 import subprocess
 
 from utils.paths import get_backup_filename, get_backup_path, ensure_dir
-from utils.compress import compress_file as util_compress, auto_compress
+from utils.compress import auto_compress
 from utils.cloud_upload import upload_s3, upload_gcs, upload_azure
 from utils.logger import setup_logger
 from utils.config_loader import load_config
 from sqlserver_backup.__init__ import run_sqlserver_backup  # Importamos la función específica para SQL Server
+from utils.history_manager import HistoryManager
 
 from db_connectors.postgres_connector import PostgresConnector
 from db_connectors.mysql_connector import MySQLConnector
 from db_connectors.mongo_connector import MongoConnector
 from db_connectors.sqlserver_connector import SQLServerConnector
+from utils.bin_checker import check_binaries, suggest_install_instructions, REQUIRED_BINARIES_BY_OP
 
 app = typer.Typer(help="Comando para realizar backups de bases de datos.")
 logger = setup_logger()  # asume que setup_logger configura backup_master_log
 
-HISTORY_FILE = "backup_history.json"
-
-
-# -------------------------
-# Historial simple (JSON)
-# -------------------------
-def save_history(entry: dict):
-    if not os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=4)
-
-    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)
-        except Exception:
-            data = []
-
-    data.append(entry)
-
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+HISTORY_FILE = "data/backup_history.json"
+history = HistoryManager(HISTORY_FILE)
 
 
 # -------------------------
@@ -191,6 +173,7 @@ def run_backup(
     cloud: Optional[str] = typer.Option(None, help="s3 | gcs | azure"),
     notify_slack: bool = typer.Option(False),
     backup_type: str = typer.Option("full", help="Tipo de backup: full, diff, log", show_default=True),  # <-- Añadimos esta opción
+    skip_binary_check: bool = typer.Option(False, help="Omitir verificación de binarios en el PATH."),
 ):
     logger.info("=== Iniciando backup desde CLI ===")
     config = load_config()
@@ -210,7 +193,21 @@ def run_backup(
 
     # crear instancia del conector
     ConnectorClass = connectors_map[dbtype]
-    connector = ConnectorClass(host, port, user, password, database)
+    connector = ConnectorClass(host, port, user, password, database, )
+
+    # Verificar binarios necesarios (por defecto) a menos que se solicite omitir
+    if not skip_binary_check:
+        required = REQUIRED_BINARIES_BY_OP.get("backup", {}).get(dbtype, [])
+        if required:
+            res = check_binaries(required)
+            missing = [k for k, v in res.items() if not v]
+            if missing:
+                typer.secho("⚠ Faltan binarios requeridos para este motor:", fg=typer.colors.YELLOW)
+                for m in missing:
+                    typer.echo(f" - {m}")
+                typer.secho("Ejecuta `python src/cli.py utils check-binaries` para ver sugerencias.", fg=typer.colors.CYAN)
+                typer.secho("Continuando de todos modos; la operación puede fallar si faltan binarios.", fg=typer.colors.YELLOW)
+                logger.warning(f"Faltan binarios: {missing} - continuando a petición del usuario.")
 
     # validar conexion
     if not validate_connection(dbtype, connector):
@@ -237,14 +234,16 @@ def run_backup(
     except Exception as e:
         logger.exception(f"Fallo en la generación del backup: {e}")
         typer.secho(f"❌ Error creando backup: {e}", fg=typer.colors.RED)
-        save_history({
-            "dbtype": dbtype,
-            "database": database,
-            "file": None,
-            "cloud": None,
-            "status": "error",
-            "message": str(e)
-        })
+        history.add_entry(
+            operation="backup",
+            db_type=dbtype,
+            database=database,
+            file_path=None,
+            hash=None,
+            status="error",
+            message=str(e),
+            cloud_url=None,
+        )
         raise typer.Exit(code=1)
 
     final_file = produced
@@ -261,14 +260,16 @@ def run_backup(
         except Exception as e:
             logger.exception(f"Error en compresión: {e}")
             typer.secho(f"❌ Error al comprimir: {e}", fg=typer.colors.RED)
-            save_history({
-                "dbtype": dbtype,
-                "database": database,
-                "file": str(produced),
-                "cloud": None,
-                "status": "error",
-                "message": f"compress error: {e}"
-            })
+            history.add_entry(
+                operation="backup",
+                db_type=dbtype,
+                database=database,
+                file_path=str(produced) if produced is not None else None,
+                hash=None,
+                status="error",
+                message=f"compress error: {e}",
+                cloud_url=None,
+            )
             raise typer.Exit(code=1)
 
     # upload a la nube (opcional)
@@ -280,14 +281,16 @@ def run_backup(
             logger.warning("upload_to_cloud devolvió None")
 
     # Guardar historial de éxito
-    save_history({
-        "dbtype": dbtype,
-        "database": database,
-        "file": str(final_file),
-        "cloud": cloud_url,
-        "status": "success",
-        "message": None
-    })
+    history.add_entry(
+        operation="backup",
+        db_type=dbtype,
+        database=database,
+        file_path=str(final_file),
+        hash=None,
+        status="success",
+        message=None,
+        cloud_url=cloud_url,
+    )
 
     typer.secho(f"🎉 Backup finalizado: {final_file}", fg=typer.colors.GREEN)
     if cloud_url:

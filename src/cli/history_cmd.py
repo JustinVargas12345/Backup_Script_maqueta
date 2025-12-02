@@ -1,202 +1,107 @@
 import typer
-import sqlite3
 from pathlib import Path
-from datetime import datetime
 from utils.logger import setup_logger
+from utils.history_manager import HistoryManager
 
-app = typer.Typer(help="Maneja el historial de operaciones de backup y restore.")
+app = typer.Typer(help="Maneja el historial JSON de operaciones de backup y restore.")
 
-DB_PATH = Path("data/history.db")
-logger = setup_logger()   # Logs a backup_master_log
+logger = setup_logger()
 
-
-# -------------------------------------------------------------
-# Inicializar SQLite si no existe
-# -------------------------------------------------------------
-def init_db():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                operation TEXT NOT NULL,         
-                db_type TEXT NOT NULL,           
-                database_name TEXT,
-                file_path TEXT,
-                status TEXT NOT NULL,            
-                message TEXT,
-                timestamp TEXT NOT NULL
-            );
-        """)
-        conn.commit()
+HISTORY_PATH = "data/backup_history.json"
+history = HistoryManager(HISTORY_PATH)
 
 
-# -------------------------------------------------------------
-# Insertar en historial (seguro y con logs)
-# -------------------------------------------------------------
-def add_history(operation: str, db_type: str, database_name: str,
-                file_path: str, status: str, message: str):
-
-    init_db()
-
-    entry_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                INSERT INTO history (operation, db_type, database_name, file_path, status, message, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (operation, db_type, database_name, file_path, status, message, entry_timestamp)
-            )
-            conn.commit()
-
-        logger.info(f"[HISTORY] Registro añadido: {operation} - {db_type} - {database_name} ({status})")
-
-    except Exception as e:
-        logger.error(f"[HISTORY ERROR] No se pudo insertar historial: {e}")
+def safe_get(item: dict, key: str, default=""):
+    """Devuelve item[key] si existe, de lo contrario default."""
+    return item.get(key) if item.get(key) not in [None, "N/A"] else default
 
 
-# -------------------------------------------------------------
-# COMMAND: mostrar historial
-# -------------------------------------------------------------
 @app.command("show")
 def show_history(
-        limit: int = typer.Option(20, help="Cantidad de registros a mostrar."),
-        op: str = typer.Option(None, help="Filtrar por operación: backup | restore")
+    limit: int = typer.Option(200, help="Cantidad de registros a mostrar."),
+    op: str = typer.Option(None, help="Filtrar por operación: backup | restore")
 ):
     """
-    Muestra el historial de operaciones realizadas.
+    Muestra el historial completo sin filtrar de manera agresiva.
     """
 
-    valid_ops = {"backup", "restore"}
-
-    if op and op not in valid_ops:
-        typer.secho("❌ Operación inválida. Usa: backup | restore", fg=typer.colors.RED)
-        raise typer.Exit()
-
-    init_db()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-
-        if op:
-            cursor.execute(
-                "SELECT * FROM history WHERE operation = ? ORDER BY id DESC LIMIT ?",
-                (op, limit)
-            )
-        else:
-            cursor.execute(
-                "SELECT * FROM history ORDER BY id DESC LIMIT ?",
-                (limit,)
-            )
-
-        rows = cursor.fetchall()
+    rows = history.get_all()
 
     if not rows:
-        typer.secho("⚠ No hay registros en el historial.", fg=typer.colors.YELLOW)
+        typer.secho("⚠ No hay registros en el historial JSON.", fg=typer.colors.YELLOW)
         return
 
-    typer.secho(f"\nMostrando últimos {len(rows)} registros:\n", fg=typer.colors.CYAN)
+    # Filtrar solo si se especificó `--op`
+    valid_ops = {"backup", "restore"}
+    if op:
+        if op not in valid_ops:
+            typer.secho("❌ Operación inválida. Usa: backup | restore", fg=typer.colors.RED)
+            raise typer.Exit()
+        rows = [r for r in rows if r.get("operation") == op]
+
+    # Orden por timestamp si existe
+    rows = sorted(rows, key=lambda x: x.get("timestamp", ""), reverse=True)
+    rows = rows[:limit]
+
+    typer.secho(f"\nMostrando {len(rows)} registros:\n", fg=typer.colors.CYAN)
 
     for r in rows:
+        record_id = r.get("id", "")
+        operation = r.get("operation", "")
+        db_type = r.get("db_type", "")
+        database = r.get("database", "")
+        file_path_str = r.get("file_path", "")
+        status = r.get("status", "")
+        message = r.get("message", "")
+        timestamp = r.get("timestamp", "")
+        cloud_url = r.get("cloud_url", "")
+        file_hash = r.get("hash", "")
+
+        file_path = Path(file_path_str) if file_path_str else None
+        exists = file_path.exists() if file_path else False
+        size = file_path.stat().st_size if exists else 0
+
+        compression = "Sin compresión"
+        if exists and file_path.suffix in {".zip", ".gz", ".tar", ".tgz", ".7z"}:
+            compression = f"Comprimido ({file_path.suffix})"
+
         typer.echo(
             f"""
-ID:          {r[0]}
-Operación:   {r[1]}
-DB Type:     {r[2]}
-Base:        {r[3]}
-Archivo:     {r[4]}
-Estado:      {r[5]}
-Mensaje:     {r[6]}
-Fecha:       {r[7]}
+ID:            {record_id}
+Operación:     {operation}
+DB Type:       {db_type}
+Base:          {database}
+Archivo:       {file_path_str}
+Existe:        {"✔ Sí" if exists else "❌ No"}
+Tamaño:        {size / 1024:.2f} KB
+Compresión:    {compression}
+Hash:          {file_hash}
+Estado:        {status}
+Mensaje:       {message}
+Cloud URL:     {cloud_url}
+Fecha:         {timestamp}
 ----------------------------------------------
 """
         )
 
 
 # -------------------------------------------------------------
-# COMMAND: ver detalle de un registro por ID
+# COMMAND: eliminar entrada
 # -------------------------------------------------------------
-@app.command("get")
-def get_entry(record_id: int):
+@app.command("delete")
+def delete_entry(record_id: str):
     """
-    Muestra una entrada específica del historial por ID.
+    Elimina una entrada específica del historial JSON.
     """
 
-    init_db()
+    rows = history.get_all()
+    filtered = [r for r in rows if r.get("id") != record_id]
 
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM history WHERE id = ?", (record_id,))
-        row = cursor.fetchone()
-
-    if not row:
+    if len(filtered) == len(rows):
         typer.secho("❌ ID no encontrado.", fg=typer.colors.RED)
         return
 
-    typer.secho(
-        f"""
-ID:             {row[0]}
-Operación:      {row[1]}
-DB Type:        {row[2]}
-Base de datos:  {row[3]}
-Archivo:        {row[4]}
-Estado:         {row[5]}
-Mensaje:        {row[6]}
-Fecha:          {row[7]}
-""",
-        fg=typer.colors.GREEN
-    )
-
-
-# -------------------------------------------------------------
-# COMMAND: limpiar todo el historial
-# -------------------------------------------------------------
-@app.command("clear")
-def clear_history(confirm: bool = typer.Option(False, "--yes", "-y", help="Confirmar limpieza total.")):
-    """
-    Elimina todo el historial.
-    """
-
-    if not confirm:
-        typer.secho("Debe confirmar: backup-cli history clear --yes", fg=typer.colors.RED)
-        raise typer.Exit()
-
-    init_db()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM history;")
-        # Reiniciar autoincremento
-        cursor.execute("DELETE FROM sqlite_sequence WHERE name='history';")
-        conn.commit()
-
-    logger.warning("[HISTORY] Historial completamente limpiado.")
-
-    typer.secho("✔ Historial limpiado.", fg=typer.colors.GREEN)
-
-
-# -------------------------------------------------------------
-# COMMAND: borrar entrada específica
-# -------------------------------------------------------------
-@app.command("delete")
-def delete_entry(record_id: int):
-    """
-    Elimina una entrada específica del historial.
-    """
-
-    init_db()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM history WHERE id = ?", (record_id,))
-        conn.commit()
-
-    logger.info(f"[HISTORY] Entrada {record_id} eliminada.")
+    history._save_history(filtered)
+    logger.info(f"[HISTORY] Entrada {record_id} eliminada del JSON.")
 
     typer.secho(f"✔ Entrada {record_id} eliminada.", fg=typer.colors.GREEN)

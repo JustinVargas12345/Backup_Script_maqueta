@@ -5,6 +5,8 @@ from typing import Tuple, Optional, Union
 from .hash_utils import calculate_sha256
 
 
+
+
 class BackupVerifier:
     """
     Verifica integridad y condiciones de un backup:

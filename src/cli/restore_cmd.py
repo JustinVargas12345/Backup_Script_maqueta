@@ -9,27 +9,88 @@ from typing import Optional
 
 from utils.hash_utils import calculate_sha256
 from utils.logger import setup_logger
-from cli.history_cmd import add_history
+from utils.history_manager import HistoryManager
+
+# helper local para registrar en el historial (usa el mismo archivo que el BackupManager)
+def add_history(operation: str, db_type: str, database_name: str, file_path: str, status: str, message: str = None, file_hash: str = None, cloud_url: str = None):
+    hm = HistoryManager("data/backup_history.json")
+    try:
+        hm.add_entry(
+            operation=operation,
+            db_type=db_type,
+            database=database_name,
+            file_path=file_path,
+            hash=file_hash,
+            status=status,
+            message=message,
+            cloud_url=cloud_url,
+        )
+    except Exception:
+        # no bloquear la restauración por fallos en el log de historial
+        logger.exception("Error registrando el historial")
 
 from db_connectors.postgres_connector import PostgresConnector
 from db_connectors.mysql_connector import MySQLConnector
 from db_connectors.mongo_connector import MongoConnector
+from utils.bin_checker import check_binaries, suggest_install_instructions, REQUIRED_BINARIES_BY_OP
 
 
 app = typer.Typer(help="Comandos para restauración de bases de datos.")
 logger = setup_logger()   # Logs → backup_master_log
 
 
+
+def find_restore_target(folder: Path) -> Path:
+    """
+    Busca dentro de una carpeta el archivo restaurable real (.sql, .dump, .bson, .json).
+    Prioriza:
+    1. .dump
+    2. .sql
+    3. .bson / .json (mongo)
+    """
+    candidates = []
+
+    for path in folder.rglob("*"):
+        if path.suffix.lower() in [".dump", ".sql", ".bson", ".json"]:
+            candidates.append(path)
+
+    if not candidates:
+        raise Exception("No se encontró ningún archivo restaurable dentro del comprimido.")
+
+    # prioridad especial
+    for ext in [".dump", ".sql", ".bson", ".json"]:
+        for c in candidates:
+            if c.suffix.lower() == ext:
+                return c
+
+    return candidates[0]
+
+
+
+
+
+
+
+
+
+
 # -------------------------------------------------------------
 # Detección básica de tipo según extensión
 # -------------------------------------------------------------
-def detect_db_type(backup_path: Path) -> str:
-    ext = backup_path.suffix.lower()
+def detect_db_type(path: Path) -> str:
+    ext = path.suffix.lower()
+
+    # detecto si está dentro de zip/tar
+    if ext in [".zip", ".gz", ".tgz", ".tar"]:
+        # asumimos SQL por default
+        return "sql"
 
     if ext == ".sql":
-        return "sql"  # puede ser postgres o mysql
+        return "sql"
+
     if ext in [".dump", ".backup"]:
         return "postgres"
+
     if ext in [".bson", ".json"]:
         return "mongo"
 
@@ -47,20 +108,31 @@ def extract_safe(zip_ref, dest):
     zip_ref.extractall(dest)
 
 
-def extract_if_needed(backup_path: Path) -> Path:
+def extract_if_needed(backup_path: Path) -> tuple:
+    """
+    Si `backup_path` es un comprimido, lo extrae en un tmp dir y devuelve
+    (ruta_real_para_restaurar, tmp_dir). Si no, devuelve (backup_path, None).
+    """
     if backup_path.suffix == ".zip":
         tmp = Path(tempfile.mkdtemp())
         with zipfile.ZipFile(backup_path, "r") as z:
             extract_safe(z, tmp)
-        return tmp
+        return find_restore_target(tmp), tmp
 
     if backup_path.suffix in [".gz", ".tgz"]:
         tmp = Path(tempfile.mkdtemp())
         with tarfile.open(backup_path, "r:gz") as t:
             t.extractall(tmp)
-        return tmp
+        return find_restore_target(tmp), tmp
 
-    return backup_path
+    if backup_path.suffix == ".tar":
+        tmp = Path(tempfile.mkdtemp())
+        with tarfile.open(backup_path, "r") as t:
+            t.extractall(tmp)
+        return find_restore_target(tmp), tmp
+
+    return backup_path, None
+
 
 
 # -------------------------------------------------------------
@@ -197,7 +269,20 @@ def restore_database(
         typer.secho(f"Tipo detectado automáticamente → {db}", fg=typer.colors.CYAN)
 
     # extraer si fue comprimido
-    final_path = extract_if_needed(backup_path)
+    final_path, _temp_dir = extract_if_needed(backup_path)
+
+    # Verificar binarios necesarios (para el tipo detectado) - no obligatorio
+    required = REQUIRED_BINARIES_BY_OP.get("restore", {}).get(db, [])
+    if required:
+        res = check_binaries(required)
+        missing = [k for k, v in res.items() if not v]
+        if missing:
+            typer.secho("⚠ Faltan binarios requeridos para el tipo de DB detectado:", fg=typer.colors.YELLOW)
+            for m in missing:
+                typer.echo(f" - {m}")
+            typer.secho("Ejecuta `python src/cli.py utils check-binaries` para ver sugerencias.", fg=typer.colors.CYAN)
+            typer.secho("Continuando de todos modos; la restauración puede fallar si faltan binarios.", fg=typer.colors.YELLOW)
+            logger.warning(f"Faltan binarios para restore: {missing} - continuando a petición del usuario.")
 
     try:
         if db in ["postgres", "sql"]:
@@ -227,7 +312,8 @@ def restore_database(
             database_name=db_name,
             file_path=str(backup_path),
             status="success",
-            message="Restauración completada sin errores."
+            message="Restauración completada sin errores.",
+            file_hash=locals().get("file_hash", None),
         )
 
     except Exception as e:
@@ -239,13 +325,17 @@ def restore_database(
             database_name=db_name,
             file_path=str(backup_path),
             status="error",
-            message=str(e)
+                message=str(e),
+                file_hash=locals().get("file_hash", None),
         )
 
         raise typer.Exit(code=1)
 
     finally:
-        # limpieza temporal
-        if final_path != backup_path and final_path.is_dir():
-            shutil.rmtree(final_path, ignore_errors=True)
-            logger.info("[RESTORE] Carpeta temporal eliminada")
+        # limpieza temporal: si extrajimos en un tmp, borrarlo
+        if _temp_dir is not None:
+            try:
+                shutil.rmtree(_temp_dir, ignore_errors=True)
+                logger.info("[RESTORE] Carpeta temporal eliminada")
+            except Exception:
+                logger.exception("No se pudo eliminar carpeta temporal")

@@ -84,5 +84,173 @@
         "cloud": null,
         "status": "success",
         "message": null
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": "backups\\postgres_postgres_20251201_094150.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": "backups\\postgres_postgres_20251201_102616.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": null,
+        "cloud": null,
+        "status": "error",
+        "message": "'PostgresConnector' object has no attribute 'dump_database'"
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": "backups\\postgres_postgres_20251201_103607.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": "backups\\postgres_postgres_20251201_115943.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "postgres",
+        "database": "postgres",
+        "file": "backups\\postgres_postgres_20251201_134512.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mysql",
+        "database": "mysql",
+        "file": "backups\\mysql_mysql_20251201_141236.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_094755.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": null,
+        "cloud": null,
+        "status": "error",
+        "message": "'MongoConnector' object has no attribute 'dump_database'"
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_100352.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_104047.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_110035.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251202_114714.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "sqlserver",
+        "database": "PruebaBackup",
+        "file": "C:\\Program Files\\Microsoft SQL Server\\MSSQL17.SQLEXPRESS\\MSSQL\\Backup\\PruebaBackup_full_20251202_141818.bak",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_141852.dump",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_142705.dump.zip",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_142850.dump",
+        "cloud": null,
+        "status": "error",
+        "message": "compress error: M\u00e9todo de compresi\u00f3n inv\u00e1lido: tar.gz"
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_143107.dump.tar",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_143200.dump.tgz",
+        "cloud": null,
+        "status": "success",
+        "message": null
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "backups\\mongo_Algoritmo_20251202_143629.dump",
+        "cloud": null,
+        "status": "error",
+        "message": "compress error: M\u00e9todo de compresi\u00f3n inv\u00e1lido: tgz"
+    },
+    {
+        "dbtype": "mongo",
+        "database": "Algoritmo",
+        "file": "C:\\Users\\Justin\\dbbackup\\Backup_Script_maqueta\\backups\\mongo_Algoritmo_20251202_143650.dump.tar.gz",
+        "cloud": null,
+        "status": "success",
+        "message": null
     }
 ]
