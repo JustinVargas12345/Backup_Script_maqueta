@@ -324,3 +324,48 @@ In order to ensure a consistent backup of the database, pass --single-transactio
 [2025-12-02 16:51:46] _find_mysqldump: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
 [2025-12-02 16:51:46] mysql_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
 [2025-12-02 16:51:46] mysqldump_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:55:56] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:55:56] _find_mysql: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:55:56] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:55:56] _find_mysqldump: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:55:56] mysql_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:55:56] mysqldump_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:55:56] Validando conexión MySQL con: C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE -h localhost:53045 -P 3306 -u root -pLaboratorio1 -e SELECT 1;
+[2025-12-02 16:55:56] validate_connection: mysql_path exists? True
+[2025-12-02 16:55:56] validate_connection: mysql_path is executable? True
+[2025-12-02 16:55:56] validate_connection: returncode=1
+[2025-12-02 16:55:56] validate_connection STDERR:
+mysql.EXE: [Warning] Using a password on the command line interface can be insecure.
+ERROR 2005 (HY000): Unknown MySQL server host 'localhost:53045' (11001)
+
+[2025-12-02 16:55:56] ❌ Error validando conexión MySQL (returncode != 0)
+[2025-12-02 16:56:22] _find_mysql: buscando 'mysql' en PATH
+[2025-12-02 16:56:22] _find_mysql: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:56:22] _find_mysqldump: buscando 'mysqldump' en PATH
+[2025-12-02 16:56:22] _find_mysqldump: encontrado en PATH -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:56:22] mysql_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE
+[2025-12-02 16:56:22] mysqldump_path -> C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE
+[2025-12-02 16:56:22] Validando conexión MySQL con: C:\Program Files\MySQL\MySQL Server 9.5\bin\mysql.EXE -h localhost -P 3306 -u root -pLaboratorio1 -e SELECT 1;
+[2025-12-02 16:56:22] validate_connection: mysql_path exists? True
+[2025-12-02 16:56:22] validate_connection: mysql_path is executable? True
+[2025-12-02 16:56:22] validate_connection: returncode=0
+[2025-12-02 16:56:22] validate_connection STDERR:
+mysql.EXE: [Warning] Using a password on the command line interface can be insecure.
+
+[2025-12-02 16:56:22] ✔️ Conexión MySQL validada correctamente.
+[2025-12-02 16:56:22] === INICIANDO BACKUP MYSQL (Prueba) ===
+[2025-12-02 16:56:22] Comando ejecutado: C:\Program Files\MySQL\MySQL Server 9.5\bin\mysqldump.EXE -h localhost -P 3306 -u root -pLaboratorio1 --databases Prueba
+[2025-12-02 16:56:22] mysqldump_path exists? True
+[2025-12-02 16:56:22] mysqldump is executable? True
+[2025-12-02 16:56:22] Archivo destino: backups\mysql_Prueba_20251202_165622.dump.sql
+[2025-12-02 16:56:22] cwd: C:\Users\Justin\dbbackup\Backup_Script_maqueta
+[2025-12-02 16:56:22] output dir exists? True
+[2025-12-02 16:56:22] STDERR:
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+Warning: A partial dump from a server that has GTIDs will by default include the GTIDs of all transactions, even those that changed suppressed parts of the database. If you don't want to restore GTIDs, pass --set-gtid-purged=OFF. To make a complete dump, pass --all-databases --triggers --routines --events. 
+Warning: A dump from a server that has GTIDs enabled will by default include the GTIDs of all transactions, even those that were executed during its extraction and might not be represented in the dumped data. This might result in an inconsistent data dump. 
+In order to ensure a consistent backup of the database, pass --single-transaction or --lock-all-tables or --source-data. 
+
+[2025-12-02 16:56:22] ✔️ Backup MySQL completado: backups\mysql_Prueba_20251202_165622.dump.sql
+[2025-12-02 16:56:22] === FIN BACKUP MYSQL (Prueba) ===
+

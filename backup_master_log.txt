@@ -453,3 +453,12 @@ ValueError: Método de compresión inválido: tgz
 2025-12-02 16:51:46,045 [INFO] === Iniciando backup desde CLI ===
 2025-12-02 16:51:46,060 [INFO] Validando conexión para 'mysql'
 2025-12-02 16:51:46,155 [ERROR] validate_connection returned False
+2025-12-02 16:55:56,725 [INFO] === Iniciando backup desde CLI ===
+2025-12-02 16:55:56,741 [INFO] Validando conexión para 'mysql'
+2025-12-02 16:55:56,805 [ERROR] validate_connection returned False
+2025-12-02 16:56:22,505 [INFO] === Iniciando backup desde CLI ===
+2025-12-02 16:56:22,521 [INFO] Validando conexión para 'mysql'
+2025-12-02 16:56:22,606 [INFO] Conexión validada correctamente.
+2025-12-02 16:56:22,608 [INFO] execute_backup -> dbtype=mysql path=backups\mysql_Prueba_20251202_165622.dump type=full
+2025-12-02 16:56:22,948 [INFO] Backup producido en: backups\mysql_Prueba_20251202_165622.dump
+2025-12-02 16:56:22,951 [INFO] === Backup finalizado correctamente ===

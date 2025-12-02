@@ -48,14 +48,15 @@ def _validate_postgres(connector: PostgresConnector) -> bool:
 
 def _validate_mysql(connector: MySQLConnector) -> bool:
     try:
-        cmd = f'mysqladmin ping -h {connector.host} -u {connector.user} -p{connector.password}'
-        r = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return b"mysqld is alive" in r.stdout
-    except FileNotFoundError:
-        logger.warning("mysqladmin no está disponible en el PATH.")
-        return False
+        # Usar el método del conector que ya registra detalles en `backup_master_log`
+        return connector.validate_connection()
     except Exception as e:
         logger.error(f"MySQL validation error: {e}")
+        try:
+            # Intentar también escribir en el log del conector para visibilidad
+            connector.log(f"_validate_mysql: excepción durante validación: {e}")
+        except Exception:
+            pass
         return False
 
 

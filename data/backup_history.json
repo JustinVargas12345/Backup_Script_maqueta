@@ -46,5 +46,17 @@
         "message": null,
         "cloud_url": null,
         "timestamp": "2025-12-02T16:01:28.867410"
+    },
+    {
+        "id": "08592fd7-1db1-414f-be6a-45822dc4c2ac",
+        "operation": "backup",
+        "db_type": "mysql",
+        "database": "Prueba",
+        "file_path": "backups\\mysql_Prueba_20251202_165622.dump",
+        "hash": null,
+        "status": "success",
+        "message": null,
+        "cloud_url": null,
+        "timestamp": "2025-12-02T16:56:22.949121"
     }
 ]
