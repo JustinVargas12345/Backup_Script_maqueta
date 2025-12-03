@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional
 
 
 class HistoryManager:
-    def __init__(self, history_file: str = "data/backup_history.json"):
+    def __init__(self, history_file: str = "backup_history.json"):
+        # Cambio: usar backup_history.json como path por defecto (raíz del proyecto)
         self.history_path = Path(history_file)
         self.history_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_file_exists()
@@ -26,23 +27,24 @@ class HistoryManager:
 
     def _normalize_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Convierte un registro antiguo al formato nuevo.
-        No modifica el archivo original.
+        Convierte un registro antiguo al formato nuevo (en memoria).
+        No modifica el archivo original; sólo mapea claves para lectura.
         """
 
         # Si es formato nuevo → devolverlo tal cual
         if "operation" in entry or "file_path" in entry:
             return entry
 
-        # ---- Mapeo de tu formato viejo → formato nuevo ----
+        # ---- Mapeo de tu formato viejo → formato nuevo (en memoria) ----
+        # El archivo se mantiene en formato viejo; normalizamos sólo para lectura
         return {
             "id": entry.get("id", str(uuid.uuid4())),
-            "operation": entry.get("operation", "backup"),  # antes no existía
-            "db_type": entry.get("dbtype", "unknown"),
+            "operation": entry.get("operation", "backup"),
+            "db_type": entry.get("dbtype", entry.get("db_type", "unknown")),
             "database": entry.get("database", None),
-            "file_path": entry.get("file", None),
+            "file_path": entry.get("file_path", entry.get("file", None)),
             "hash": entry.get("hash", None),
-            "cloud_url": entry.get("cloud", None),
+            "cloud_url": entry.get("cloud_url", entry.get("cloud", None)),
             "status": entry.get("status", "unknown"),
             "message": entry.get("message", None),
             "timestamp": entry.get("timestamp", datetime.now().isoformat()),

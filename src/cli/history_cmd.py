@@ -7,7 +7,7 @@ app = typer.Typer(help="Maneja el historial JSON de operaciones de backup y rest
 
 logger = setup_logger()
 
-HISTORY_PATH = "data/backup_history.json"
+HISTORY_PATH = "backup_history.json"
 history = HistoryManager(HISTORY_PATH)
 
 

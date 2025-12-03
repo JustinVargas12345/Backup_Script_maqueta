@@ -144,26 +144,194 @@ python src/cli.py backup run --dbtype mongo --host "localhost" --port 27017 --us
 Si quieres omitir la verificación de binarios en ambientes donde sabes que todo está instalado, añade `--skip-binary-check` al comando `backup run`.
 
 
-### 3) Restore — Ejemplos
+### 3) Restore — Método `run` (nuevo, recomendado)
 
-Nota: el grupo de comandos es `restore` y el comando dentro del grupo también se llama `restore`, por lo que la invocación es `python src/cli.py restore restore <backup_file> ...`.
+El comando `restore run` es el nuevo método implementado que:
+- Busca automáticamente el backup más reciente si no especificas archivo.
+- Valida conexión a la base antes de restaurar (opcional con `--skip-connection-check`).
+- Extrae archivos comprimidos (.zip, .tar.gz, .tgz, .tar) automáticamente.
+- Registra operación en historial (`backup_history.json`).
+- Maneja autenticación robusta con múltiples intentos según tipo de BD.
 
-Restaurar un dump de PostgreSQL (archivo `.dump` o `.sql`):
+#### Restore MongoDB (con manejo de múltiples mecanismos de autenticación)
+
+El método replica la lógica del `MongoConnector` e intenta conexión sin auth primero, luego con usuario/contraseña y diferentes mecanismos SCRAM-SHA-256 / SCRAM-SHA-1:
+
+Restaurar Mongo a base nueva (modo automático — busca último backup):
 ```powershell
-python src/cli.py restore restore backups/postgres_postgres_20251202_154821.dump --db postgres --db-name postgres --host "localhost" --port 5432 --user "postgres" --password "Laboratorio1"
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1'
 ```
 
-Restaurar un backup MySQL (.sql):
+Restaurar Mongo especificando archivo:
 ```powershell
-python src/cli.py restore restore backups/mysql_mysql_20251201_141236.dump.sql --db mysql --db-name mi_db --host "localhost" --port 3306 --user "root" --password "miPass"
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1' --backup-file "backups\mongo_Algoritmo_20251203_104438.dump"
 ```
 
-Restaurar Mongo (backup generado por mongodump):
+Con verificación de hash:
 ```powershell
-python src/cli.py restore restore backups/mongo_Algoritmo_20251202_143650.dump --db mongo --db-name Algoritmo --host "localhost" --port 27017 --user "admin" --password "Laboratorio1"
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1' --backup-file "backups\mongo_Algoritmo_20251203_104438.dump" --verify-hash
 ```
 
-Puedes añadir `--verify-hash` al comando `restore` para que el programa calcule y muestre el SHA256 del archivo antes de proceder.
+Omitir validación de conexión (si hay problemas de permisos):
+```powershell
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1' --skip-connection-check
+```
+
+**Notas MongoDB:**
+- Maneja automáticamente archivos `.dump.tar.gz` (extrae y detecta directorio/marcador).
+- Intenta 4 mecanismos en orden: sin auth → con auth + authSource → SCRAM-SHA-256 → SCRAM-SHA-1.
+- Si `Script.bson` está vacío, la colección se crea pero sin documentos (normal si el backup no contenía datos).
+- Usa `mongosh` con credenciales `admin/Laboratorio1` para verificar: `use Algoritmo; db.Script.countDocuments();`.
+
+#### Restore PostgreSQL (con PGPASSWORD env var y shell execution)
+
+El método replica la ejecución del `PostgresConnector` usando comando shell con PGPASSWORD:
+
+Restaurar Postgres a base nueva (modo automático):
+```powershell
+$env:PGPASSWORD = 'TuPassword'
+python src/cli.py restore run --dbtype postgres --database test_restore_pg --host localhost --port 5432 --user postgres --password 'TuPassword'
+Remove-Item Env:PGPASSWORD
+```
+
+Restaurar Postgres especificando archivo:
+```powershell
+$env:PGPASSWORD = 'TuPassword'
+python src/cli.py restore run --dbtype postgres --database test_restore_pg --host localhost --port 5432 --user postgres --password 'TuPassword' --backup-file "backups\postgres_postgres_20251201_094150.dump"
+Remove-Item Env:PGPASSWORD
+```
+
+**Notas PostgreSQL:**
+- Detecta automáticamente si el archivo es `.sql` (usa `psql`) o binario (usa `pg_restore`).
+- Usa `shell=True` y variable de entorno `PGPASSWORD` para evitar prompts interactivos.
+- Captura stdout/stderr para logging detallado en `backup_master_log.txt`.
+
+#### Restore MySQL (con conector detallado)
+
+El método usa la ruta detectada por `MySQLConnector` y soporta logging ampliado:
+
+Restaurar MySQL a base nueva (modo automático):
+```powershell
+python src/cli.py restore run --dbtype mysql --database test_restore_mysql --host localhost --port 3306 --user root --password 'miPassword'
+```
+
+Restaurar MySQL especificando archivo:
+```powershell
+python src/cli.py restore run --dbtype mysql --database test_restore_mysql --host localhost --port 3306 --user root --password 'miPassword' --backup-file "backups\mysql_mysql_20251201_141236.dump.sql"
+```
+
+**Notas MySQL:**
+- Requiere archivo `.sql` (no carpetas).
+- Usa el cliente `mysql` detectado automáticamente por el conector.
+- Lee el archivo como texto (UTF-8) para evitar problemas de codificación en Windows.
+- Captura y registra stdout/stderr del comando.
+
+#### Restore SQL Server
+
+Restaurar SQL Server a base nueva (modo automático):
+```powershell
+python src/cli.py restore run --dbtype sqlserver --database test_restore_mssql --host localhost --port 1433 --user sa --password 'TuSaPassword'
+```
+
+Restaurar SQL Server especificando archivo:
+```powershell
+python src/cli.py restore run --dbtype sqlserver --database test_restore_mssql --host localhost --port 1433 --user sa --password 'TuSaPassword' --backup-file "backups\nombre_backup.bak"
+```
+
+**Notas SQL Server:**
+- Usa `sqlcmd` para ejecutar comandos T-SQL `RESTORE DATABASE`.
+- Usa flags `WITH REPLACE` para sobrescribir BD existente.
+- Requiere que los archivos lógicos (`.mdf`, `.ldf`) estén en rutas válidas; verifica configuración según tu instalación.
+
+---
+
+### 3b) Opciones comunes para `restore run`
+
+Parámetros disponibles:
+
+| Parámetro | Tipo | Defecto | Descripción |
+|-----------|------|---------|-------------|
+| `--dbtype` | str | *requerido* | `postgres`, `mysql`, `mongo`, `sqlserver` |
+| `--database` | str | *requerido* | Nombre de la BD destino |
+| `--host` | str | `localhost` | Host del servidor |
+| `--port` | int | según BD | Puerto (5432 postgres, 3306 mysql, 27017 mongo, 1433 sqlserver) |
+| `--user` | str | *requerido* | Usuario |
+| `--password` | str | *requerido* | Contraseña |
+| `--backup-file` | str | None | (Opcional) Ruta exacta del archivo; si no especifica, busca automáticamente |
+| `--verify-hash` | flag | False | Calcula y registra SHA256 del backup |
+| `--skip-binary-check` | flag | False | Omite verificación de binarios disponibles |
+| `--skip-connection-check` | flag | False | Omite validación de conexión previa |
+
+Ejemplos con combinaciones útiles:
+
+Restaurar con hash verificación y omitir validación de conexión:
+```powershell
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1' --verify-hash --skip-connection-check
+```
+
+Restaurar múltiples BDs en secuencia (script PowerShell):
+```powershell
+# Restaurar todas las BDs de una sola vez
+foreach ($db in @('Algoritmo', 'otra_db')) {
+    python src/cli.py restore run --dbtype mongo --database $db --host localhost --port 27017 --user admin --password 'Laboratorio1'
+}
+```
+
+---
+
+### 3c) Restauración manual (comandos shell, si prefieres no usar CLI)
+
+Si prefieres ejecutar comandos directamente sin pasar por la CLI:
+
+MongoDB (con verbose para ver qué se restaura):
+```powershell
+& "C:\Program Files\MongoDB\Tools\bin\mongorestore.EXE" `
+  --host=localhost --port=27017 `
+  --username=admin --password='Laboratorio1' --authenticationDatabase=admin `
+  --drop --verbose "backups\mongo_Algoritmo_20251203_104438"
+```
+
+PostgreSQL (con PGPASSWORD):
+```powershell
+$env:PGPASSWORD = 'TuPassword'
+& "C:\Program Files\PostgreSQL\15\bin\pg_restore.exe" `
+  -h localhost -p 5432 -U postgres `
+  -d test_db "backups\postgres_postgres_20251201_094150.dump"
+Remove-Item Env:PGPASSWORD
+```
+
+MySQL (piping archivo SQL):
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" `
+  -h localhost -P 3306 -u root -p'miPassword' test_db < "backups\mysql_mysql_20251201_141236.dump.sql"
+```
+
+---
+
+### 3d) Verificación post-restauración
+
+Tras restaurar, verifica que los datos llegaron correctamente:
+
+MongoDB — contar documentos:
+```powershell
+& "C:\Program Files\MongoDB\mongosh\bin\mongosh.exe" --host localhost --port 27017 -u 'admin' -p 'Laboratorio1' --authenticationDatabase 'admin' --eval "use Algoritmo; db.Script.countDocuments();"
+```
+
+PostgreSQL — listar tablas:
+```powershell
+$env:PGPASSWORD = 'TuPassword'
+& "C:\Program Files\PostgreSQL\15\bin\psql.exe" -h localhost -p 5432 -U postgres -d test_db -c "\dt"
+Remove-Item Env:PGPASSWORD
+```
+
+MySQL — listar tablas:
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -h localhost -P 3306 -u root -p'miPassword' test_db -e "SHOW TABLES;"
+```
+
+---
+
+Puedes añadir `--verify-hash` al comando `restore run` para que el programa calcule y muestre el SHA256 del archivo antes de proceder.
 
 
 ### 4) Comandos `utils` (ejemplos)

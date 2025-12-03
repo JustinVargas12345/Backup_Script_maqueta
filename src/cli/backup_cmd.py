@@ -22,7 +22,7 @@ from utils.bin_checker import check_binaries, suggest_install_instructions, REQU
 app = typer.Typer(help="Comando para realizar backups de bases de datos.")
 logger = setup_logger()  # asume que setup_logger configura backup_master_log
 
-HISTORY_FILE = "data/backup_history.json"
+HISTORY_FILE = "backup_history.json"
 history = HistoryManager(HISTORY_FILE)
 
 
