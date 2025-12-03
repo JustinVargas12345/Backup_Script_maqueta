@@ -10,6 +10,8 @@ from utils.compress import auto_compress
 from utils.cloud_upload import upload_s3, upload_gcs, upload_azure
 from utils.logger import setup_logger
 from utils.config_loader import load_config
+from utils.notify import send_notification
+import getpass
 from sqlserver_backup.__init__ import run_sqlserver_backup  # Importamos la función específica para SQL Server
 from utils.history_manager import HistoryManager
 
@@ -55,15 +57,25 @@ def _validate_mysql(connector: MySQLConnector) -> bool:
         try:
             # Intentar también escribir en el log del conector para visibilidad
             connector.log(f"_validate_mysql: excepción durante validación: {e}")
-        except Exception:
-            pass
+        except Exception as log_e:
+            logger.debug(f"_validate_mysql: no se pudo escribir en el log del conector: {log_e}")
         return False
 
 
 def _validate_mongo(connector: MongoConnector) -> bool:
     try:
-        cmd = f'mongosh --quiet --host {connector.host}:{connector.port} --eval "db.runCommand({{ping:1}})"'
-        r = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Use a list of args to avoid shell=True and injection; pass host and port separately
+        cmd = [
+            "mongosh",
+            "--quiet",
+            "--host",
+            str(connector.host),
+            "--port",
+            str(connector.port),
+            "--eval",
+            "db.runCommand({ping:1})",
+        ]
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return b'"ok"' in r.stdout.lower() or b'ok' in r.stdout.lower()
     except FileNotFoundError:
         logger.warning("mongosh no está disponible en el PATH.")
@@ -282,7 +294,7 @@ def run_backup(
             logger.warning("upload_to_cloud devolvió None")
 
     # Guardar historial de éxito
-    history.add_entry(
+    entry = history.add_entry(
         operation="backup",
         db_type=dbtype,
         database=database,
@@ -292,6 +304,58 @@ def run_backup(
         message=None,
         cloud_url=cloud_url,
     )
+
+    # Notificación opcional (configurada vía `config notify-set`)
+    try:
+        if notify_slack:
+            notify_cfg = config.get("notify", {})
+            notify_url = notify_cfg.get("url")
+            auth_cfg = notify_cfg.get("auth", {})
+            if notify_url:
+                # Determine how to obtain token/secret at runtime (no secrets are read from config)
+                method = auth_cfg.get("method", "none")
+                token_type = auth_cfg.get("token_type", "jwt")
+                env_var = auth_cfg.get("env_var")
+
+                token_value = None
+                if method == "env":
+                    if not env_var:
+                        logger.warning("notify auth method=env pero no se configuró env_var; omitiendo auth.")
+                    else:
+                        token_value = os.environ.get(env_var)
+                        if token_value is None:
+                            logger.warning(f"Variable de entorno {env_var} no encontrada; omitiendo auth.")
+                elif method == "prompt":
+                    # Prompt the user securely for the secret/token (not echoed)
+                    prompt_text = "Secreto/token para notificación: "
+                    token_value = getpass.getpass(prompt_text)
+                elif method == "none":
+                    token_value = None
+                else:
+                    logger.warning(f"Método de auth desconocido: {method}; omitiendo auth.")
+
+                # Send notification: if token_type == 'jwt' we pass it as secret (make_jwt will create JWT);
+                # if token_type == 'bearer' we pass it as auth_token (already-signed bearer token)
+                ok = False
+                status_code = 0
+                text = ""
+                if token_value:
+                    if token_type == "jwt":
+                        ok, status_code, text = send_notification(notify_url, entry, secret=token_value)
+                    else:
+                        ok, status_code, text = send_notification(notify_url, entry, auth_token=token_value)
+                else:
+                    # No token provided — attempt without Authorization
+                    ok, status_code, text = send_notification(notify_url, entry)
+
+                if ok:
+                    logger.info(f"Notificación enviada correctamente a {notify_url} (HTTP {status_code})")
+                else:
+                    logger.warning(f"Notificación fallida a {notify_url} (HTTP {status_code}): {text}")
+            else:
+                logger.warning("notify_slack activo pero no hay URL configurada (usar `config notify-set`).")
+    except Exception as e:
+        logger.exception(f"Error durante envío de notificación: {e}")
 
     typer.secho(f"🎉 Backup finalizado: {final_file}", fg=typer.colors.GREEN)
     if cloud_url:

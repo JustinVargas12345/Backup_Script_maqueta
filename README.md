@@ -54,19 +54,147 @@ pip install -r requirements.txt
 
 ## Uso en Docker (recomendado para evitar problemas de binarios)
 
-Se incluye un `Dockerfile` ejemplo que instala los clientes más comunes y las dependencias Python. Para construir la imagen:
+### ¿Qué es Docker y por qué usarlo?
 
-```bash
+Docker te permite empaquetar la aplicación **junto con todos los binarios** (psql, mysql, mongorestore, etc.) en una **imagen** que se ejecuta en un **contenedor** aislado. Ventajas:
+
+1. **Sin depender del host**: No necesitas instalar psql, mysql, mongosh en tu máquina — Docker los instala dentro del contenedor.
+2. **Reproducible**: La misma imagen funciona igual en tu PC, en un servidor, en CI/CD, etc.
+3. **Limpio**: No contaminas tu sistema instalando herramientas en el PATH.
+4. **Fácil de desplegar**: Solo necesitas Docker instalado en el host.
+
+### ¿Cómo funciona el empaquetamiento?
+
+**El Dockerfile**:
+- Base: `python:3.11-slim` (Linux con Python preinstalado).
+- Instala binarios: `postgresql-client`, `default-mysql-client`, herramientas comunes (zip, tar, curl).
+- Instala dependencias Python: `pip install -r requirements.txt`.
+- Copia el código fuente de la app dentro de la imagen.
+- Define punto de entrada: `python src/cli.py` (cuando ejecutas el contenedor, llama al CLI).
+
+**El proceso de build**:
+```
+1. docker build -t backup_script:local .  (lee Dockerfile, crea imagen)
+   ↓
+2. Docker descarga imagen base Python
+   ↓
+3. Instala paquetes apt (postgres-client, mysql-client, etc.)
+   ↓
+4. Instala paquetes Python (requests, typer, etc.)
+   ↓
+5. Copia código fuente (/app)
+   ↓
+6. Imagen lista (backup_script:local) ~ 800-1000 MB
+```
+
+**Ejecutar un comando dentro del contenedor**:
+```powershell
+docker run --rm -it -v ${PWD}/backups:/app/backups backup_script:local backup run --dbtype postgres ...
+       ↑      ↑  ↑  ↑                    ↑                       ↑
+       │      │  │  └─ Mapea carpeta local ↔ contenedor          └─ Comando a ejecutar dentro
+       │      │  └─ Interactivo (pedir input, ver output en vivo)
+       │      └─ Elimina contenedor después (no deja basura)
+       └─ Ejecuta la imagen
+```
+
+### Paso 1: Construir la imagen (solo una vez)
+
+```powershell
 make build-image
+# o directamente:
+docker build -t backup_script:local .
 ```
 
-Para ejecutar la CLI dentro del contenedor:
+Isso descargas/instala todo. La primera vez tarda 2-5 minutos (depende de conexión).
 
-```bash
-docker run --rm -it -v $(pwd)/data:/app/data backup_script:local restore --help
+### Paso 2: Ejecutar backups (opción A — Script PowerShell recomendado)
+
+Usamos el script `scripts/run_backup_docker.ps1` que maneja contraseñas y variables sensibles de forma segura:
+
+```powershell
+# Postgres
+.\scripts\run_backup_docker.ps1 -DbType postgres -Database mydb -User postgres
+
+# MySQL con compresión
+.\scripts\run_backup_docker.ps1 -DbType mysql -Database mydb -User root -Compress zip
+
+# MongoDB con notificación webhook
+.\scripts\run_backup_docker.ps1 -DbType mongo -Database Algoritmo -User admin -NotifySlack
 ```
 
-(Ajusta `-v` para mapear directorios que quieras persistir.)
+El script:
+1. **Solicita contraseña** de forma segura (sin mostrar en pantalla).
+2. **Construye imagen** si no existe.
+3. **Ejecuta contenedor** inyectando variables de entorno (contraseña, etc.).
+4. **Limpia variables** después (no quedan en el entorno).
+5. **Guarda backup** en `./backups` (mapeado desde el contenedor).
+
+### Paso 2b: Ejecutar backups (opción B — Línea de comandos manual)
+
+Si prefieres no usar el script:
+
+```powershell
+# Postgres
+$env:PGPASSWORD = 'mi_password'
+docker run --rm -it `
+  -e PGPASSWORD `
+  -v ${PWD}/backups:/app/backups `
+  -w /app `
+  backup_script:local `
+  backup run --dbtype postgres --host host.docker.internal --port 5432 --user postgres --password '<PASSWORD>' --database mydb
+Remove-Item Env:PGPASSWORD
+
+# MySQL
+docker run --rm -it `
+  -v ${PWD}/backups:/app/backups `
+  backup_script:local `
+  backup run --dbtype mysql --host host.docker.internal --user root --password 'mypass' --database mydb --compress zip
+```
+
+**Nota sobre `host.docker.internal`**: dentro del contenedor, para conectar a BD en tu máquina local, usa `host.docker.internal` en lugar de `localhost`.
+
+### Contenedores separados para binarios pesados (arquitectura avanzada)
+
+Si quieres reducir tamaño de imagen o tener control granular, puedes:
+
+1. **Imagen app ligera**: solo Python + deps (300 MB).
+2. **Contenedor Postgres**: imagen oficial `postgres:16` (para backups/restore de Postgres).
+3. **Contenedor MongoDB**: imagen oficial `mongo:7` (para backups/restore de Mongo).
+4. **Orquestador**: tu app llama a esos contenedores con `docker exec` o `docker run` cuando necesita un binario.
+
+Por ahora la solución "todo-en-uno" (Dockerfile actual) es más simple. Si necesitas esa arquitectura avanzada, avísame.
+
+### Seguridad: cómo manejar contraseñas y secretos en Docker
+
+**IMPORTANTE**: Nunca pases contraseñas en línea de comandos visible o las escribas en scripts sin protección. Docker permite inyectar variables de entorno de forma segura:
+
+**✅ Forma SEGURA** (usa `scripts/run_backup_docker.ps1` o patrón similar):
+```powershell
+# 1. Solicitar contraseña sin echo (no aparece en pantalla ni en historial)
+$Password = Read-Host -Prompt "Password" -AsSecureString
+$PlainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
+
+# 2. Inyectar como variable de entorno al contenedor (no en línea de comandos)
+docker run --rm -it -e PGPASSWORD=$PlainPassword backup_script:local backup run ...
+
+# 3. Limpiar variable después
+Remove-Item Env:PGPASSWORD
+```
+
+**❌ Forma INSEGURA** (nunca hagas esto):
+```powershell
+# BAD: la contraseña aparece en:
+# - historial de PowerShell
+# - log de Docker
+# - procesos visibles (ps auxww)
+docker run --rm -it backup_script:local backup run --password 'MiPassword123' ...
+```
+
+**Recomendaciones**:
+- Usa `scripts/run_backup_docker.ps1` que implementa esto correctamente.
+- O si ejecutas manualmente, sigue el patrón "solicitar → inyectar → limpiar" arriba.
+- Para CI/CD (GitHub Actions, GitLab CI, etc.), usa Docker secrets o variables de secreto de la plataforma.
+- En Kubernetes, usa `Secret` resources.
 
 ## Comprobación de binarios
 
@@ -108,17 +236,18 @@ Los ejemplos siguientes están escritos para ejecutarse desde la raíz del repos
 
 Postgres (sin compresión):
 ```powershell
-python src/cli.py backup run --dbtype postgres --host "localhost" --port 5432 --user "postgres" --password "Laboratorio1" --database "postgres" --backup-type full
+# Evita exponer contraseñas en ejemplos; usa variables de entorno o placeholders
+python src/cli.py backup run --dbtype postgres --host "localhost" --port 5432 --user "postgres" --password "<PASSWORD>" --database "postgres" --backup-type full
 ```
 
 MySQL (sin compresión):
 ```powershell
-python src/cli.py backup run --dbtype mysql --host "localhost" --port 3306 --user "root" --password "miPass" --database "mi_db" --backup-type full
+python src/cli.py backup run --dbtype mysql --host "localhost" --port 3306 --user "root" --password "<PASSWORD>" --database "mi_db" --backup-type full
 ```
 
 MongoDB (sin compresión):
 ```powershell
-python src/cli.py backup run --dbtype mongo --host "localhost" --port 27017 --user "admin" --password "Laboratorio1" --database "Algoritmo" --backup-type full
+python src/cli.py backup run --dbtype mongo --host "localhost" --port 27017 --user "admin" --password "<PASSWORD>" --database "Algoritmo" --backup-type full
 ```
 
 
@@ -128,17 +257,17 @@ Puedes usar la opción `--compress` con valores comunes como `zip`, `tar` o `gz`
 
 Postgres + ZIP:
 ```powershell
-python src/cli.py backup run --dbtype postgres --host "localhost" --port 5432 --user "postgres" --password "Laboratorio1" --database "postgres" --backup-type full --compress zip
+python src/cli.py backup run --dbtype postgres --host "localhost" --port 5432 --user "postgres" --password "<PASSWORD>" --database "postgres" --backup-type full --compress zip
 ```
 
 MySQL + TAR.GZ:
 ```powershell
-python src/cli.py backup run --dbtype mysql --host "localhost" --port 3306 --user "root" --password "miPass" --database "mi_db" --backup-type full --compress tar
+python src/cli.py backup run --dbtype mysql --host "localhost" --port 3306 --user "root" --password "<PASSWORD>" --database "mi_db" --backup-type full --compress tar
 ```
 
 Mongo + gzip (ejemplo):
 ```powershell
-python src/cli.py backup run --dbtype mongo --host "localhost" --port 27017 --user "admin" --password "Laboratorio1" --database "Algoritmo" --backup-type full --compress gz
+python src/cli.py backup run --dbtype mongo --host "localhost" --port 27017 --user "admin" --password "<PASSWORD>" --database "Algoritmo" --backup-type full --compress gz
 ```
 
 Si quieres omitir la verificación de binarios en ambientes donde sabes que todo está instalado, añade `--skip-binary-check` al comando `backup run`.
@@ -159,7 +288,7 @@ El método replica la lógica del `MongoConnector` e intenta conexión sin auth 
 
 Restaurar Mongo a base nueva (modo automático — busca último backup):
 ```powershell
-python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1'
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password '<PASSWORD>'
 ```
 
 Restaurar Mongo especificando archivo:
@@ -169,7 +298,7 @@ python src/cli.py restore run --dbtype mongo --database Algoritmo --host localho
 
 Con verificación de hash:
 ```powershell
-python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password 'Laboratorio1' --backup-file "backups\mongo_Algoritmo_20251203_104438.dump" --verify-hash
+python src/cli.py restore run --dbtype mongo --database Algoritmo --host localhost --port 27017 --user admin --password '<PASSWORD>' --backup-file "backups\mongo_Algoritmo_20251203_104438.dump" --verify-hash
 ```
 
 Omitir validación de conexión (si hay problemas de permisos):
@@ -189,8 +318,9 @@ El método replica la ejecución del `PostgresConnector` usando comando shell co
 
 Restaurar Postgres a base nueva (modo automático):
 ```powershell
-$env:PGPASSWORD = 'TuPassword'
-python src/cli.py restore run --dbtype postgres --database test_restore_pg --host localhost --port 5432 --user postgres --password 'TuPassword'
+# Usar variables de entorno para evitar exponer contraseñas en el listado de procesos
+$env:PGPASSWORD = '<PASSWORD>'
+python src/cli.py restore run --dbtype postgres --database test_restore_pg --host localhost --port 5432 --user postgres --password '<PASSWORD>'
 Remove-Item Env:PGPASSWORD
 ```
 
@@ -293,7 +423,7 @@ MongoDB (con verbose para ver qué se restaura):
 
 PostgreSQL (con PGPASSWORD):
 ```powershell
-$env:PGPASSWORD = 'TuPassword'
+$env:PGPASSWORD = '<PASSWORD>'
 & "C:\Program Files\PostgreSQL\15\bin\pg_restore.exe" `
   -h localhost -p 5432 -U postgres `
   -d test_db "backups\postgres_postgres_20251201_094150.dump"
@@ -314,7 +444,7 @@ Tras restaurar, verifica que los datos llegaron correctamente:
 
 MongoDB — contar documentos:
 ```powershell
-& "C:\Program Files\MongoDB\mongosh\bin\mongosh.exe" --host localhost --port 27017 -u 'admin' -p 'Laboratorio1' --authenticationDatabase 'admin' --eval "use Algoritmo; db.Script.countDocuments();"
+& "C:\Program Files\MongoDB\mongosh\bin\mongosh.exe" --host localhost --port 27017 -u 'admin' -p '<PASSWORD>' --authenticationDatabase 'admin' --eval "use Algoritmo; db.Script.countDocuments();"
 ```
 
 PostgreSQL — listar tablas:
@@ -392,12 +522,159 @@ Configurar proveedor de nube en `config` (ejemplo AWS):
 python src/cli.py config cloud --provider aws --bucket mi-bucket --access-key ABC --secret-key XYZ --region us-east-1
 ```
 
+## Notificaciones (Webhook)
 
-### 7) Ejemplo completo: backup + comprimir + subir a S3
+Puedes configurar que la aplicación envíe una notificación POST a una URL (webhook) cada vez que finalice un backup exitoso. El payload es el mismo objeto que se guarda en el historial (`backup_history.json`) y contiene campos como `id`, `operation`, `db_type`, `database`, `file_path`, `hash`, `status`, `message`, `cloud_url`, `timestamp`.
 
-1. Ejecutar backup comprimido y subir a la nube en un solo comando:
+IMPORTANTE: por seguridad la aplicación NO almacena secretos/token en texto claro dentro de `config/config.toml`.
+Separa la configuración de la URL del método de autenticación. Los métodos soportados son:
+
+- `none` : no se envía encabezado `Authorization`.
+- `env`  : se lee el secreto/token desde una variable de entorno (no se guarda el valor).
+- `prompt`: se solicita el secreto/token al usuario en tiempo de ejecución (no se guarda).
+
+Además puede indicar el tipo de token:
+- `jwt` : se interpreta el valor como un *secret* para generar un JWT HS256 (se firma y se envía como `Bearer <jwt>`).
+- `bearer` : se interpreta el valor como un token ya firmado (se envía tal cual en `Authorization: Bearer <token>`).
+
+Comandos y ejemplos exactos (PowerShell):
+
+- Configurar sólo la URL del webhook (no guarda secretos):
 ```powershell
-python src/cli.py backup run --dbtype postgres --host "localhost" --port 5432 --user "postgres" --password "Laboratorio1" --database "postgres" --backup-type full --compress zip --cloud s3
+python src/cli.py config notify-set --url "https://webhook.example.com/notify"
+```
+
+- Configurar método de autenticación: (no se almacena ningún secreto)
+
+  *Usar variable de entorno* (ejemplo: la variable `NOTIFY_SECRET` contendrá el secret o token):
+```powershell
+python src/cli.py config notify-auth-set --method env --token-type jwt --env-var NOTIFY_SECRET
+# Desde PowerShell antes de ejecutar el backup:
+$env:NOTIFY_SECRET = 'mi_secret_para_firmar'
+python src/cli.py backup run --dbtype postgres --host localhost --user postgres --password '<PASSWORD>' --database postgres --notify-slack
+Remove-Item Env:NOTIFY_SECRET
+```
+
+  *Pedir el secreto en tiempo de ejecución (prompt)*:
+```powershell
+python src/cli.py config notify-auth-set --method prompt --token-type bearer
+# Al ejecutar el backup se pedirá el token de forma segura (no se mostrará en pantalla):
+python src/cli.py backup run --dbtype mysql --host localhost --user root --password '<PASSWORD>' --database mi_db --notify-slack
+```
+
+  *Sin autenticación* (no Authorization header):
+```powershell
+python src/cli.py config notify-auth-set --method none
+python src/cli.py config notify-set --url "https://webhook.example.com/notify"
+python src/cli.py backup run --dbtype mongo --host localhost --user admin --password '<PASSWORD>' --database Algoritmo --notify-slack
+```
+
+Mostrar la configuración de notificaciones (NO mostrará secretos):
+```powershell
+python src/cli.py config notify-show
+python src/cli.py config notify-auth-show
+```
+
+Notas de seguridad y buenas prácticas:
+
+- Nunca guardes secretos, tokens ni claves en `config/config.toml`.
+- Si usas el método `env`, establece la variable de entorno en el proceso que ejecuta el backup y elimínala inmediatamente después (ejemplo con PowerShell mostrado arriba).
+- Si usas `prompt`, el valor nunca se guarda en disco y se solicita cada ejecución.
+- `token_type=jwt` asume que el valor es un *secret* y generará un JWT HS256; `token_type=bearer` enviará el valor tal cual.
+
+Estos comandos permiten operar sin escribir secretos en archivos del proyecto.
+
+Opciones de autenticación:
+- Sin autenticación: guarda sólo la `url` y no configures `secret`.
+- Con autenticación simple: guarda un `secret` que será convertido en un JWT HS256 y enviado en el header `Authorization: Bearer <token>`.
+
+Comandos de ejemplo:
+
+- Guardar la URL (sin secreto):
+```powershell
+python src/cli.py config notify-set --url https://example.com/hooks/backup
+```
+
+- Guardar la URL con secreto (se almacenará en `config/config.toml` como texto; recomendamos usar variables de entorno si prefieres no guardarlo):
+```powershell
+python src/cli.py config notify-set --url https://example.com/hooks/backup --secret MyWebhookSecret
+```
+
+- Ver la configuración actual de notificaciones:
+```powershell
+python src/cli.py config notify-show
+```
+
+Uso recomendado (no almacenar secretos en disco):
+- Guarda la URL con `config notify-set` pero deja `secret` vacío.
+- Exporta el secreto en la sesión si prefieres no guardarlo en `config`:
+```powershell
+#$env:NOTIFY_SECRET = 'MyWebhookSecret'
+python src/cli.py backup run --dbtype postgres --host localhost --user postgres --password '<PASSWORD>' --database mydb --notify-slack
+```
+
+Nota: si configuras el `secret` vía `config notify-set`, el CLI usará ese valor automáticamente; si además defines `NOTIFY_SECRET` en el entorno, el comportamiento actual prioriza el `secret` guardado en `config`.
+
+Ejemplo de payload (JSON) enviado al webhook:
+```json
+{
+  "id": "6f8d3c2a-...",
+  "operation": "backup",
+  "db_type": "postgres",
+  "database": "mydb",
+  "file_path": "backups/postgres_mydb_20251203_104438.dump",
+  "hash": "<sha256>",
+  "status": "success",
+  "message": null,
+  "cloud_url": null,
+  "timestamp": "2025-12-03T10:44:38"
+}
+```
+
+Comportamiento en el CLI:
+- Para enviar la notificación tras el backup añade la opción `--notify-slack` al comando `backup run`.
+- Si la URL no está configurada (`config notify-set`), se registrará una advertencia en el log y no se intentará el POST.
+
+Seguridad y recomendaciones:
+- Evita almacenar secretos en `config/config.toml` si el repositorio está en control de versiones. Usa variables de entorno o mecanismos secretos del sistema (Azure Key Vault, AWS Secrets Manager, etc.).
+- Si necesitas un encabezado o esquema de autenticación distinto (p. ej. `X-Signature`), puedo añadirlo y soportarlo en `config notify-set`.
+
+
+## Docker: construir imagen de la aplicación
+
+Se proporciona un `Dockerfile` listo para construir una imagen que incluye la aplicación Python y clientes comunes (Postgres, MySQL). Algunos clientes más pesados (p. ej. MongoDB Database Tools o `mssql-tools`) están disponibles como opciones de build—habilítalos explícitamente, ver notas abajo.
+
+Construir imagen básica (clientes comunes incluidos):
+```powershell
+make build-image
+```
+
+Construir imagen "full" incluyendo herramientas opcionales (más pesada):
+```powershell
+make build-image-full
+# o directamente:
+docker build --build-arg INSTALL_MONGO=true --build-arg INSTALL_MSSQL=false -t backup_script:full .
+```
+
+Pushing a Docker Hub:
+```powershell
+# Establece tu repo en la variable DOCKERHUB_REPO, por ejemplo:
+$env:DOCKERHUB_REPO = 'youruser/backup_script'
+make build-image
+make push-image
+```
+
+Notas importantes sobre binarios y tamaño de imagen:
+- El `Dockerfile` instala por defecto `postgresql-client` y `default-mysql-client`, además de utilidades básicas (`curl`, `wget`, `tar`, `zip`).
+- Herramientas como `mssql-tools` requieren añadir el repositorio de Microsoft y tienden a aumentar mucho el tamaño de la imagen; por eso están deshabilitadas por defecto. Si las necesitas, habilítalas con `--build-arg INSTALL_MSSQL=true` y sigue las instrucciones del README para añadir los repositorios oficiales (puede requerir pasos adicionales por versión y SO base).
+- MongoDB Database Tools (`mongorestore`, `mongosh`) pueden no estar disponibles en la misma forma en todas las distros; la opción `INSTALL_MONGO` intenta instalar un paquete disponible (`mongodb-clients`) pero revisa la salida del build en caso de error.
+
+Optimización y consejos:
+- Para entornos de producción donde quieras minimizar la imagen, considera construir dos imágenes separadas: una "builder" que ejecute backups dentro de contenedores que tengan los clientes, y otra "orquestadora" ligera que sólo coordine y llame a esos contenedores. Esto permite mantener imágenes pequeñas y declarar dependencias explícitas.
+- Usa `--squash` o una etapa de build multi-stage si necesitas reducir tamaño adicional.
+- Revisa y limpia secretos: los valores sensibles deben inyectarse como variables de entorno en tiempo de ejecución o gestionarse mediante un secreto de CI/CD.
+
+*** End Patch
 ```
 
 2. Si la configuración de nube requiere credenciales específicas, configúralas primero con `config cloud` o editando `config/config.toml`.

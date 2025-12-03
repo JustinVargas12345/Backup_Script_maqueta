@@ -33,7 +33,7 @@ class MySQLConnector:
         try:
             self.log(f"mysql_path -> {self.mysql_path}")
             self.log(f"mysqldump_path -> {self.mysqldump_path}")
-        except Exception:
+        except Exception as e:
             # en caso de fallo al loggear, pasar
             pass
 
@@ -47,19 +47,19 @@ class MySQLConnector:
         try:
             with open(self.log_file, "a", encoding="utf-8") as log_file:
                 log_file.write(entry)
-        except Exception:
+        except Exception as e:
             # Intentar escribir en el log por defecto si falla
             try:
                 with open(self.LOG_FILE, "a", encoding="utf-8") as log_file:
                     log_file.write(entry)
-            except Exception:
+            except Exception as e2:
                 pass
 
         # También imprimir en consola si verbose
         if getattr(self, "verbose", False):
             try:
                 print(entry, end="")
-            except Exception:
+            except Exception as e:
                 pass
 
     # ----------------------------
@@ -73,21 +73,21 @@ class MySQLConnector:
         # 1) Buscar en PATH
         try:
             self.log("_find_mysql: buscando 'mysql' en PATH")
-        except Exception:
+        except Exception as e:
             pass
 
         path = shutil.which("mysql")
         if path:
             try:
                 self.log(f"_find_mysql: encontrado en PATH -> {path}")
-            except Exception:
+            except Exception as e:
                 pass
             return path
 
         # 2) Rutas comunes en Windows
         try:
             self.log("_find_mysql: buscando en rutas comunes de instalación")
-        except Exception:
+        except Exception as e:
             pass
 
         candidates = glob.glob(r"C:\\Program Files\\MySQL\\*\\bin\\mysql.exe")
@@ -96,7 +96,7 @@ class MySQLConnector:
         if candidates:
             try:
                 self.log(f"_find_mysql: encontrado en ruta común -> {candidates[0]}")
-            except Exception:
+            except Exception as e:
                 pass
             return candidates[0]
 
@@ -104,7 +104,7 @@ class MySQLConnector:
         try:
             path_env = os.environ.get("PATH", "")
             self.log(f"_find_mysql: PATH env -> {path_env}")
-        except Exception:
+        except Exception as e:
             pass
 
         raise FileNotFoundError(
@@ -122,21 +122,21 @@ class MySQLConnector:
         # 1) PATH
         try:
             self.log("_find_mysqldump: buscando 'mysqldump' en PATH")
-        except Exception:
+        except Exception as e:
             pass
 
         path = shutil.which("mysqldump")
         if path:
             try:
                 self.log(f"_find_mysqldump: encontrado en PATH -> {path}")
-            except Exception:
+            except Exception as e:
                 pass
             return path
 
         # 2) Rutas comunes
         try:
             self.log("_find_mysqldump: buscando en rutas comunes de instalación")
-        except Exception:
+        except Exception as e:
             pass
 
         candidates = glob.glob(r"C:\\Program Files\\MySQL\\*\\bin\\mysqldump.exe")
@@ -145,13 +145,13 @@ class MySQLConnector:
         if candidates:
             try:
                 self.log(f"_find_mysqldump: encontrado en ruta común -> {candidates[0]}")
-            except Exception:
+            except Exception as e:
                 pass
             return candidates[0]
 
         try:
             self.log(f"_find_mysqldump: PATH env -> {os.environ.get('PATH', '')}")
-        except Exception:
+        except Exception as e:
             pass
 
         raise FileNotFoundError(

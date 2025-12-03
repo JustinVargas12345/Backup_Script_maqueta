@@ -27,7 +27,7 @@ def add_history(operation: str, db_type: str, database_name: str, file_path: str
             message=message,
             cloud_url=cloud_url,
         )
-    except Exception:
+    except Exception as e:
         logger.exception("Error registrando el historial")
 
 from db_connectors.postgres_connector import PostgresConnector
@@ -284,7 +284,8 @@ def restore_mysql(conn: MySQLConnector, dump_path: Path, db_name: str):
     # Usar la ruta detectada por el conector (más confiable)
     try:
         mysql_path = conn.mysql_path
-    except Exception:
+    except Exception as e:
+        logger.debug(f"No se pudo obtener mysql_path del conector: {e}")
         mysql_path = get_binary_path("mysql", "mysql")
 
     restore_cmd = [

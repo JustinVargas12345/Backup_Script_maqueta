@@ -1,5 +1,7 @@
 # src/backup_manager.py
 import datetime
+import tempfile
+import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -9,7 +11,11 @@ from src.utils.db_selector import DatabaseSelector
 from src.utils import compress
 
 from src.storage.local_storage import LocalStorage
-from src.storage.cloud_storage import CloudStorage
+from src.storage.cloud_storage_impl import CloudStorage
+from src.utils.logger import setup_logger
+
+
+logger = setup_logger()
 
 # Módulo SQL Server (nuevo import limpio)
 from src.sqlserver_backup import run_sqlserver_backup, run_sqlserver_backup_test, get_sqlserver_backup_dir
@@ -94,7 +100,7 @@ class BackupManager:
                     remote = self.cloud.save_file(str(saved_path), remote_name)
                     cloud_url = f"cloud://{remote}"
                 except Exception as e:
-                    print(f"[WARN] No se pudo subir a la nube: {e}")
+                    logger.warning(f"No se pudo subir a la nube: {e}")
 
             # Registrar
             entry = self.history.add_entry(
@@ -118,9 +124,9 @@ class BackupManager:
         ConnectorClass = DatabaseSelector.get_connector_class(db_type)
         connector = ConnectorClass(host=host, port=port, user=user, password=password, database=database)
 
-        # Crear dump temporal en memoria/temporal sin guardarlo en el disco de forma visible
+        # Crear dump temporal en un directorio temporal seguro (cross-platform)
         raw_name = f"{db_type}_{database}_{timestamp}.dump"
-        tmp_dir = Path("/tmp") if Path("/tmp").exists() else Path(".")
+        tmp_dir = Path(tempfile.mkdtemp())
         raw_path = tmp_dir / raw_name
 
         try:
@@ -159,7 +165,7 @@ class BackupManager:
                     remote = self.cloud.save_file(str(saved_path), f"{db_type}/{Path(saved_path).name}")
                     cloud_url = f"cloud://{remote}"
                 except Exception as e:
-                    print(f"[WARN] No se pudo subir a la nube: {e}")
+                    logger.warning(f"No se pudo subir a la nube: {e}")
 
             # Registrar en el historial
             entry = self.history.add_entry(
@@ -176,9 +182,12 @@ class BackupManager:
             return entry
 
         finally:
-            # Eliminar dump temporal siempre
-            if raw_path.exists():
-                raw_path.unlink()
+            # Eliminar dump temporal siempre (borrar todo el directorio temporal)
+            try:
+                if tmp_dir and tmp_dir.exists():
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+            except Exception as e:
+                logger.warning(f"No se pudo limpiar el directorio temporal {tmp_dir}: {e}")
 
     # ==========================================================
     # RESTORE

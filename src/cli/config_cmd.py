@@ -1,6 +1,7 @@
 import typer
 from pathlib import Path
 import toml
+import logging
 from typing import Optional
 
 app = typer.Typer(help="Administración de configuración del sistema de backups.")
@@ -62,8 +63,9 @@ def load_config() -> dict:
 
     try:
         return toml.load(CONFIG_PATH)
-    except Exception:
+    except Exception as e:
         # archivo roto → se regenera
+        logging.exception(f"Error leyendo config.toml: {e}")
         create_default_config()
         return DEFAULT_CONFIG
 
@@ -159,3 +161,88 @@ def set_cloud_provider(
     save_config(config)
 
     typer.secho("✔ Configuración de nube actualizada.", fg=typer.colors.GREEN)
+
+
+@app.command("notify-set")
+def set_notify(
+    url: str = typer.Option(..., help="URL a la que se enviarán las notificaciones POST"),
+):
+    """Configura la URL para notificaciones POST tras backups.
+
+    Nota: por seguridad NO se almacenan secretos en el archivo de configuración.
+    Use `notify-auth-set` para configurar el método de autenticación (env|prompt|none).
+    """
+    config = load_config()
+    config.setdefault("notify", {})
+    config["notify"]["url"] = url
+    # No guardar secretos en texto claro
+    config["notify"].pop("secret", None)
+    save_config(config)
+    typer.secho("✔ Notificación (URL) configurada.", fg=typer.colors.GREEN)
+
+
+@app.command("notify-show")
+def show_notify():
+    """Muestra la configuración actual de notificaciones."""
+    config = load_config()
+    notify_cfg = config.get("notify", {})
+    if not notify_cfg:
+        typer.secho("No hay configuración de notificaciones.", fg=typer.colors.YELLOW)
+        raise typer.Exit()
+    typer.echo("Notificaciones:")
+    typer.echo(f"  URL: {notify_cfg.get('url')}")
+    has_secret = bool(notify_cfg.get("secret"))
+    typer.echo(f"  Tiene secreto: {has_secret}")
+
+
+@app.command("notify-auth-set")
+def set_notify_auth(
+    method: str = typer.Option(..., help="Método: none | env | prompt"),
+    token_type: str = typer.Option("jwt", help="Tipo de token: jwt | bearer"),
+    env_var: Optional[str] = typer.Option(None, help="Nombre de la variable de entorno que contiene el secreto/token si method=env")
+):
+    """Configura cómo se obtendrá el secreto/token para firmar o enviar la notificación.
+
+    - method=none: no se envía Authorization.
+    - method=env: se leerá el valor desde la variable de entorno indicada por `env_var`.
+    - method=prompt: se pedirá el secreto/token en tiempo de ejecución (no se almacena).
+
+    token_type indica si el valor es un `jwt` (secret para firmar JWT HS256) o un `bearer` (token ya firmado).
+    """
+    allowed_methods = ("none", "env", "prompt")
+    allowed_types = ("jwt", "bearer")
+    if method not in allowed_methods:
+        raise typer.BadParameter(f"method inválido. Debe ser uno de: {allowed_methods}")
+    if token_type not in allowed_types:
+        raise typer.BadParameter(f"token_type inválido. Debe ser uno de: {allowed_types}")
+    if method == "env" and not env_var:
+        raise typer.BadParameter("Cuando method=env, debe especificar --env-var con el nombre de la variable de entorno.")
+
+    config = load_config()
+    config.setdefault("notify", {})
+    config["notify"]["auth"] = {
+        "method": method,
+        "token_type": token_type,
+    }
+    if env_var:
+        config["notify"]["auth"]["env_var"] = env_var
+
+    # IMPORTANT: Do not store any secret/token value here.
+    save_config(config)
+    typer.secho("✔ Método de autenticación para notificaciones configurado.", fg=typer.colors.GREEN)
+
+
+@app.command("notify-auth-show")
+def show_notify_auth():
+    """Muestra la configuración de autenticación para las notificaciones (sin secretos)."""
+    config = load_config()
+    notify = config.get("notify", {})
+    auth = notify.get("auth")
+    if not auth:
+        typer.secho("No hay método de autenticación configurado para notificaciones.", fg=typer.colors.YELLOW)
+        raise typer.Exit()
+    typer.echo("Auth config:")
+    typer.echo(f"  method: {auth.get('method')}")
+    typer.echo(f"  token_type: {auth.get('token_type')}")
+    if auth.get("env_var"):
+        typer.echo(f"  env_var: {auth.get('env_var')}")

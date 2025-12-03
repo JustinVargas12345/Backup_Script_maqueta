@@ -78,7 +78,7 @@ class SQLServerConnector:
 
             if row and row[0]:
                 return Path(str(row[0]))
-        except Exception:
+        except Exception as e:
             return None
 
         return None
@@ -116,7 +116,7 @@ class SQLServerConnector:
                 if ":\\\\" in line or ":\\" in line:
                     return Path(line)
 
-        except Exception:
+        except Exception as e:
             return None
 
         return None
@@ -386,7 +386,7 @@ class SQLServerConnector:
             if row and row[0]:
                 return Path(str(row[0]))
 
-        except Exception:
+        except Exception as e:
             return None
 
         return None
@@ -453,7 +453,7 @@ class SQLServerConnector:
             )
             if d3:
                 return d3
-        except Exception:
+        except Exception as e:
             pass
 
         return None
@@ -476,7 +476,7 @@ class SQLServerConnector:
             ]
             r = subprocess.run(cmd, capture_output=True, text=True)
             return r.returncode == 0
-        except Exception:
+        except Exception as e:
             return False
 
     def _test_pyodbc(self):
@@ -485,7 +485,7 @@ class SQLServerConnector:
             conn = pyodbc.connect(conn_str, timeout=3)
             conn.close()
             return True
-        except Exception:
+        except Exception as e:
             return False
 
     def connection_test(self):

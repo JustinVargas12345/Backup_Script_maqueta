@@ -92,8 +92,11 @@ class PostgresConnector:
         if os.path.exists(temp_test_file):
             try:
                 os.remove(temp_test_file)
-            except:
-                pass
+            except Exception as e:
+                try:
+                    self.log(f"Advertencia al eliminar temporal {temp_test_file}: {e}")
+                except Exception:
+                    pass
 
         if process.returncode != 0:
             self.log(f"❌ ERROR conexión PostgreSQL:\n{process.stderr}")
