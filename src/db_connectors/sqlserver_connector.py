@@ -1,271 +1,4 @@
-'''
-import subprocess
-from pathlib import Path
-import shutil
 
-
-try:
-    import pyodbc
-except ImportError:
-    pyodbc = None
-
-
-class SQLServerConnector:
-    """
-    Conector híbrido para SQL Server con:
-    - sqlcmd
-    - pyodbc
-    Y detección automática de la carpeta oficial de backups.
-    """
-
-    def __init__(self, host, port, user, password, database):
-        self.host = host              # Puede ser: localhost  ó localhost\SQLEXPRESS
-        self.port = port              # Puede ser None si es instancia nombrada
-        self.user = user
-        self.password = password
-        self.database = database
-
-    def has_sqlcmd(self):
-        """Retorna True si sqlcmd está disponible en el sistema."""
-        return shutil.which("sqlcmd") is not None
-    # ===============================================================
-    # Construir servidor para ODBC / SQLCMD
-    # ===============================================================
-    def _build_server_string(self):
-        """
-        Devuelve la cadena correcta para SQL Server:
-            - Si el host contiene una instancia (SQLEXPRESS), NO usar puerto.
-            - Si no contiene instancia, usar host,port
-        """
-        if "\\" in self.host:  
-            # Ej: localhost\SQLEXPRESS
-            return self.host
-        elif self.port:
-            return f"{self.host},{self.port}"
-        else:
-            return self.host
-
-    # ===============================================================
-    # Detectar carpeta oficial de BACKUP vía ODBC
-    # ===============================================================
-    def detect_backup_directory_odbc(self):
-        if not pyodbc:
-            return None
-
-        server = self._build_server_string()
-
-        query = """
-        DECLARE @dir NVARCHAR(4000);
-        EXEC master.dbo.xp_instance_regread
-            N'HKEY_LOCAL_MACHINE',
-            N'SOFTWARE\\Microsoft\\MSSQLServer\\MSSQLServer',
-            N'BackupDirectory',
-            @dir OUTPUT;
-        SELECT @dir AS BackupDirectory;
-        """
-
-        try:
-            conn = pyodbc.connect(
-                f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-                f"SERVER={server};UID={self.user};PWD={self.password};",
-                timeout=3
-            )
-            cur = conn.cursor()
-            cur.execute(query)
-            row = cur.fetchone()
-            cur.close()
-            conn.close()
-
-            if row and row[0]:
-                return Path(str(row[0]))
-        except Exception as e:
-            return None
-
-        return None
-
-    # ===============================================================
-    # Detectar carpeta de backup vía sqlcmd
-    # ===============================================================
-    def detect_backup_directory_sqlcmd(self):
-        server = self._build_server_string()
-
-        query = """
-        DECLARE @dir NVARCHAR(4000);
-        EXEC master.dbo.xp_instance_regread
-            N'HKEY_LOCAL_MACHINE',
-            N'SOFTWARE\\Microsoft\\MSSQLServer\\MSSQLServer',
-            N'BackupDirectory',
-            @dir OUTPUT;
-        SELECT @dir;
-        """
-
-        try:
-            cmd = [
-                "sqlcmd",
-                "-S", server,
-                "-U", self.user,
-                "-P", self.password,
-                "-Q", query
-            ]
-
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            output = result.stdout.splitlines()
-
-            for line in output:
-                line = line.strip()
-                if ":\\\\" in line or ":\\" in line:
-                    return Path(line)
-
-        except Exception as e:
-            return None
-
-        return None
-
-    # ===============================================================
-    # Método central de detección
-    # ===============================================================
-    def get_backup_directory(self) -> Path | None:
-        # 1) ODBC (más seguro)
-        d1 = self.detect_backup_directory_odbc()
-        if d1:
-            return d1
-
-        # 2) sqlcmd
-        d2 = self.detect_backup_directory_sqlcmd()
-        if d2:
-            return d2
-
-        return None
-
-    # ===============================================================
-    # Tests de conexión
-    # ===============================================================
-    def _test_sqlcmd(self) -> bool:
-        server = self._build_server_string()
-        try:
-            cmd = [
-                "sqlcmd",
-                "-S", server,
-                "-U", self.user,
-                "-P", self.password,
-                "-Q", "SELECT 1;"
-            ]
-            r = subprocess.run(cmd, capture_output=True, text=True)
-            return r.returncode == 0
-        except FileNotFoundError:
-            return False
-
-    def _test_pyodbc(self) -> bool:
-        if not pyodbc:
-            return False
-
-        server = self._build_server_string()
-
-        try:
-            conn = pyodbc.connect(
-                f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-                f"SERVER={server};UID={self.user};PWD={self.password};"
-                f"DATABASE={self.database}",
-                timeout=3
-            )
-            conn.close()
-            return True
-        except Exception:
-            return False
-
-    def connection_test(self):
-        if self._test_sqlcmd():
-            return "sqlcmd"
-        if self._test_pyodbc():
-            return "pyodbc"
-        return None
-
-    # ===============================================================
-    # BACKUPS
-    # ===============================================================
-    def _backup_with_sqlcmd(self, output_file):
-        server = self._build_server_string()
-
-        sql = (
-            f"BACKUP DATABASE [{self.database}] "
-            f"TO DISK = '{output_file}' WITH INIT, FORMAT;"
-        )
-
-        cmd = [
-            "sqlcmd",
-            "-S", server,
-            "-U", self.user,
-            "-P", self.password,
-            "-Q", sql
-        ]
-
-        r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0:
-            raise RuntimeError(f"[sqlcmd] error:\n{r.stderr}")
-
-        return output_file
-
-    def _backup_with_pyodbc(self, output_file):
-        if not pyodbc:
-            raise RuntimeError("pyodbc no está disponible.")
-
-        server = self._build_server_string()
-
-        conn = pyodbc.connect(
-            f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-            f"SERVER={server};UID={self.user};PWD={self.password};"
-            f"DATABASE={self.database}"
-        )
-        cursor = conn.cursor()
-
-        sql = (
-            f"BACKUP DATABASE [{self.database}] "
-            f"TO DISK = '{output_file}' WITH INIT, FORMAT;"
-        )
-
-        cursor.execute(sql)
-        cursor.commit()
-        cursor.close()
-        conn.close()
-
-        return output_file
-
-    # ===============================================================
-    # BACKUP PRINCIPAL
-    # ===============================================================
-    def create_backup(self, output_path: str | None) -> str:
-        """
-        Si output_path es None → se usa la carpeta oficial de SQL Server.
-        """
-
-        # Si no se especificó ruta → usar backup oficial
-        if not output_path:
-            backup_dir = self.get_backup_directory()
-            if not backup_dir:
-                raise RuntimeError(
-                    "No se pudo detectar la carpeta oficial de backup "
-                    "de SQL Server. Configúrala manualmente."
-                )
-
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            output_file = backup_dir / f"{self.database}_auto.bak"
-
-        else:
-            output_file = Path(output_path)
-
-        method = self.connection_test()
-
-        if not method:
-            raise RuntimeError("No se pudo conectar con SQL Server por sqlcmd ni por pyodbc.")
-
-        if method == "sqlcmd":
-            return self._backup_with_sqlcmd(str(output_file))
-
-        if method == "pyodbc":
-            return self._backup_with_pyodbc(str(output_file))
-
-        raise RuntimeError("Método de backup inesperado.")
-'''
 import subprocess
 from pathlib import Path
 import shutil
@@ -300,6 +33,14 @@ class SQLServerConnector:
         self.user = user
         self.password = password
         self.database = database
+
+    def log(self, message: str):
+        try:
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open("backup_master_log", "a", encoding="utf-8") as f:
+                f.write(f"[{ts}] {message}\n")
+        except Exception:
+            pass
 
     # ===============================================================
     # Utils
@@ -475,8 +216,22 @@ class SQLServerConnector:
                 "-Q", "SELECT 1;"
             ]
             r = subprocess.run(cmd, capture_output=True, text=True)
-            return r.returncode == 0
-        except Exception as e:
+            if r.returncode == 0:
+                return True
+
+            out = ((r.stderr or "") + "\n" + (r.stdout or "")).lower()
+            patterns = [f'cannot open database "{self.database.lower()}"', f'database "{self.database.lower()}" does not exist', 'cannot open database', 'does not exist']
+            if any(p in out for p in patterns):
+                try:
+                    self.log(f"❌ ERROR SQLServer: Base de datos no encontrada ({self.database}). Output: {r.stderr or r.stdout}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(r.stderr or r.stdout)
+
+            return False
+        except FileNotFoundError:
+            return False
+        except Exception:
             return False
 
     def _test_pyodbc(self):
@@ -486,6 +241,13 @@ class SQLServerConnector:
             conn.close()
             return True
         except Exception as e:
+            msg = str(e).lower()
+            if self.database and (f'database "{self.database.lower()}"' in msg or 'cannot open database' in msg or 'does not exist' in msg):
+                try:
+                    self.log(f"❌ ERROR pyodbc: Base de datos no encontrada ({self.database}). Excepción: {e}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(str(e))
             return False
 
     def connection_test(self):
@@ -538,6 +300,13 @@ class SQLServerConnector:
 
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
+            out = ((result.stderr or "") + "\n" + (result.stdout or "")).lower()
+            if self.database and (f'cannot open database "{self.database.lower()}"' in out or 'does not exist' in out or 'cannot open database' in out):
+                try:
+                    self.log(f"❌ ERROR sqlcmd backup: Base de datos no encontrada ({self.database}). Output: {result.stderr or result.stdout}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(result.stderr or result.stdout)
             raise RuntimeError(f"[sqlcmd] error:\n{result.stderr}")
 
         return output_file
@@ -555,6 +324,15 @@ class SQLServerConnector:
         try:
             cursor.execute(sql)
             cursor.commit()
+        except Exception as e:
+            msg = str(e).lower()
+            if self.database and (f'database "{self.database.lower()}"' in msg or 'does not exist' in msg or 'cannot open database' in msg):
+                try:
+                    self.log(f"❌ ERROR pyodbc backup: Base de datos no encontrada ({self.database}). Excepción: {e}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(str(e))
+            raise
         finally:
             cursor.close()
             conn.close()

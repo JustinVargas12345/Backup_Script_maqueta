@@ -4,6 +4,7 @@ from datetime import datetime
 import shutil
 import glob
 import os
+from .errors import DatabaseNotFoundError
 
 
 class PostgresConnector:
@@ -50,10 +51,12 @@ class PostgresConnector:
         if candidates:
             return candidates[0]
 
-        raise FileNotFoundError(
-            "❌ No se encontró pg_dump.exe. "
-            "Asegúrate de que PostgreSQL esté instalado."
-        )
+        # No lanzar durante __init__; devolver None y registrar la ausencia.
+        try:
+            self.log("_find_pg_dump: ❌ No se encontró pg_dump.exe en PATH ni en rutas conocidas.")
+        except Exception:
+            pass
+        return None
 
     # ----------------------------
     # VALIDATE CONNECTION (SAFE)
@@ -65,6 +68,14 @@ class PostgresConnector:
         """
 
         self.log("🧪 Probando conexión PostgreSQL…")
+
+        # Si no existe pg_dump detectado, no intentamos ejecutar y devolvemos False
+        if not getattr(self, "pg_dump_path", None):
+            try:
+                self.log("❌ validate_connection: pg_dump no disponible en el sistema.")
+            except Exception:
+                pass
+            return False
 
         env = os.environ.copy()
         env["PGPASSWORD"] = self.password
@@ -99,6 +110,15 @@ class PostgresConnector:
                     pass
 
         if process.returncode != 0:
+            # Detectar si el error corresponde a base de datos inexistente
+            stderr_l = (process.stderr or "").lower()
+            if self.database and (f'database "{self.database.lower()}" does not exist' in stderr_l or 'does not exist' in stderr_l or 'could not connect to database' in stderr_l):
+                try:
+                    self.log(f"❌ ERROR: Base de datos no encontrada ({self.database}). STDERR: {process.stderr}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(process.stderr)
+
             self.log(f"❌ ERROR conexión PostgreSQL:\n{process.stderr}")
             return False
 
@@ -148,6 +168,14 @@ class PostgresConnector:
 
         # Validar resultado
         if process.returncode != 0:
+            stderr_l = (process.stderr or "").lower()
+            if self.database and (f'database "{self.database.lower()}" does not exist' in stderr_l or 'does not exist' in stderr_l or 'could not connect to database' in stderr_l):
+                try:
+                    self.log(f"❌ ERROR: Base de datos no encontrada ({self.database}). STDERR: {process.stderr}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(f"pg_dump error: {process.stderr}")
+
             self.log(f"❌ ERROR: pg_dump terminó con código {process.returncode}")
             raise Exception(
                 f"pg_dump error:\nSTDOUT:\n{process.stdout}\nSTDERR:\n{process.stderr}"

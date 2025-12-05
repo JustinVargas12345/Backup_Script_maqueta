@@ -58,19 +58,20 @@ Si ves un error, Docker no está en el PATH. Reinicia PowerShell o la máquina.
 Abre **PowerShell** y navega a la carpeta del proyecto:
 
 ```powershell
-cd C:\Users\Justin\dbbackup\Backup_Script_maqueta
+cd C:\path\to\Backup_Script_maqueta
 ```
 
 Construye la imagen:
 
 ```powershell
+# Opción A: con Make (si está instalado)
 make build-image
-```
 
-O si no tienes `make` instalado:
-
-```powershell
+# Opción B: con Docker directamente (recomendado si no tienes Make)
 docker build -t backup_script:local .
+
+# Opción C: Incluir MongoDB tools (si planeas usar MongoDB con mongorestore)
+docker build --build-arg INSTALL_MONGO=true -t backup_script:local .
 ```
 
 **¿Qué sucede?**
@@ -78,9 +79,9 @@ docker build -t backup_script:local .
 - Instala paquetes del sistema (postgres-client, mysql-client, etc.)
 - Instala dependencias Python (requests, typer, etc.)
 - Copia tu código dentro
-- Construye la imagen final (~600-800 MB)
+- Construye la imagen final (~600-800 MB dependiendo de opciones)
 
-**Tiempo**: 3-5 minutos la primera vez. Después se cachea.
+**Tiempo**: 3-5 minutos la primera vez. Después se cachea (más rápido).
 
 **Espera hasta ver**: `Successfully tagged backup_script:local`
 
@@ -132,21 +133,28 @@ Sigue los pasos:
 
 ### Caso D: Usar la BD de prueba incluida (docker-compose)
 
-Si no tienes BD instalada localmente, puedes levantar BDs de prueba en contenedores:
+Si no tienes BD instalada localmente, puedes levantar BDs de prueba en contenedores con healthcheck automático:
 
 ```powershell
 docker-compose up -d
-# Espera 10 segundos
+# Espera ~10 segundos para que las BDs estén listas (healthcheck verifica)
 
-# Ahora ejecuta backup de la Postgres de prueba
+# Ahora ejecuta backup de la Postgres de prueba (usa el nombre del servicio como host)
 .\scripts\run_backup_docker.ps1 -DbType postgres -Database sampledb -User test -Host postgres
 # O MongoDB:
 .\scripts\run_backup_docker.ps1 -DbType mongo -Database sampledb -User test -Host mongo
+# O MySQL:
+.\scripts\run_backup_docker.ps1 -DbType mysql -Database sampledb -User test -Host mysql
 ```
 
-Después, para detener:
+Después, para detener todos los contenedores:
 ```powershell
 docker-compose down
+```
+
+Para detener y limpiar volúmenes (elimina datos):
+```powershell
+docker-compose down -v
 ```
 
 ---

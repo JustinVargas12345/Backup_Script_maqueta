@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+  # Base de datos de prueba: PostgreSQL
   postgres:
     image: postgres:16
     container_name: dbbackup_postgres
@@ -16,7 +17,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - dbnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d sampledb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # Base de datos de prueba: MySQL
   mysql:
     image: mysql:8.0
     container_name: dbbackup_mysql
@@ -34,7 +41,13 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - dbnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # Base de datos de prueba: MongoDB
   mongo:
     image: mongo:7
     container_name: dbbackup_mongo
@@ -50,6 +63,11 @@ services:
       - mongo_data:/data/db
     networks:
       - dbnet
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

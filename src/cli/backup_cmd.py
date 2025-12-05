@@ -4,6 +4,7 @@ import os
 from typing import Optional
 from pathlib import Path
 import subprocess
+from urllib.parse import urlparse, unquote
 
 from utils.paths import get_backup_filename, get_backup_path, ensure_dir
 from utils.compress import auto_compress
@@ -19,6 +20,7 @@ from db_connectors.postgres_connector import PostgresConnector
 from db_connectors.mysql_connector import MySQLConnector
 from db_connectors.mongo_connector import MongoConnector
 from db_connectors.sqlserver_connector import SQLServerConnector
+from db_connectors import DatabaseNotFoundError
 from utils.bin_checker import check_binaries, suggest_install_instructions, REQUIRED_BINARIES_BY_OP
 
 app = typer.Typer(help="Comando para realizar backups de bases de datos.")
@@ -34,6 +36,9 @@ history = HistoryManager(HISTORY_FILE)
 def _validate_sqlserver(connector: SQLServerConnector) -> bool:
     try:
         return bool(connector.connection_test())
+    except DatabaseNotFoundError:
+        # Propagar para que el CLI muestre sólo el mensaje corto
+        raise
     except Exception as e:
         logger.error(f"SQLServer validation error: {e}")
         return False
@@ -43,6 +48,8 @@ def _validate_postgres(connector: PostgresConnector) -> bool:
     try:
         # Usamos pg_dump para validar la conexión
         return connector.validate_connection()
+    except DatabaseNotFoundError:
+        raise
     except Exception as e:
         logger.error(f"Postgres validation error: {e}")
         return False
@@ -52,6 +59,8 @@ def _validate_mysql(connector: MySQLConnector) -> bool:
     try:
         # Usar el método del conector que ya registra detalles en `backup_master_log`
         return connector.validate_connection()
+    except DatabaseNotFoundError:
+        raise
     except Exception as e:
         logger.error(f"MySQL validation error: {e}")
         try:
@@ -80,6 +89,8 @@ def _validate_mongo(connector: MongoConnector) -> bool:
     except FileNotFoundError:
         logger.warning("mongosh no está disponible en el PATH.")
         return False
+    except DatabaseNotFoundError:
+        raise
     except Exception as e:
         logger.error(f"Mongo validation error: {e}")
         return False
@@ -176,6 +187,7 @@ def upload_to_cloud(cloud_provider: str, final_file: str, config: dict) -> Optio
 @app.command("run")
 def run_backup(
     dbtype: str = typer.Option(..., help="postgres | mysql | mongo | sqlserver"),
+    connection: Optional[str] = typer.Option(None, "--conn", "-c", help="Cadena de conexión compacta. Ej: mysql://user:pass@host:port/db"),
     host: str = typer.Option("localhost"),
     port: Optional[int] = typer.Option(None),
     user: str = typer.Option(...),
@@ -190,6 +202,45 @@ def run_backup(
 ):
     logger.info("=== Iniciando backup desde CLI ===")
     config = load_config()
+
+    # Si se pasó una cadena de conexión compacta, parsearla y usar sus valores
+    def _parse_connection_string(conn: str):
+        u = urlparse(conn)
+        scheme = (u.scheme or "").lower()
+        dbtype_map = {
+            "mysql": "mysql",
+            "postgres": "postgres",
+            "postgresql": "postgres",
+            "pgsql": "postgres",
+            "mongodb": "mongo",
+            "mongo": "mongo",
+            "mssql": "sqlserver",
+            "sqlserver": "sqlserver",
+        }
+        parsed_dbtype = dbtype_map.get(scheme)
+        parsed_user = unquote(u.username) if u.username else None
+        parsed_pass = unquote(u.password) if u.password else None
+        parsed_host = u.hostname or None
+        parsed_port = u.port
+        parsed_db = u.path.lstrip("/") if u.path else None
+        return parsed_dbtype, parsed_host, parsed_port, parsed_user, parsed_pass, parsed_db
+
+    if connection:
+        try:
+            p_dbtype, p_host, p_port, p_user, p_pass, p_db = _parse_connection_string(connection)
+            # Si el usuario no indicó dbtype explícito, lo inferimos de la cadena
+            if p_dbtype and (not dbtype or dbtype == ""):
+                dbtype = p_dbtype
+
+            # Sobrescribir los valores sólo si están presentes en la cadena
+            host = p_host or host
+            port = p_port or port
+            user = p_user or user
+            password = p_pass or password
+            database = p_db or database
+        except Exception as e:
+            typer.secho(f"❌ Error parseando la cadena de conexión: {e}", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
 
     # mapear conectores
     connectors_map = {
@@ -223,7 +274,25 @@ def run_backup(
                 logger.warning(f"Faltan binarios: {missing} - continuando a petición del usuario.")
 
     # validar conexion
-    if not validate_connection(dbtype, connector):
+    try:
+        valid = validate_connection(dbtype, connector)
+    except DatabaseNotFoundError as e:
+        # Los conectores ya registraron el detalle en el log principal.
+        typer.secho("❌ No se encontró la base de datos.", fg=typer.colors.RED)
+        logger.error(f"Database not found during validation: {e}")
+        history.add_entry(
+            operation="backup",
+            db_type=dbtype,
+            database=database,
+            file_path=None,
+            hash=None,
+            status="error",
+            message="database not found",
+            cloud_url=None,
+        )
+        raise typer.Exit(code=1)
+
+    if not valid:
         typer.secho("❌ No se pudo validar la conexión.", fg=typer.colors.RED)
         logger.error("validate_connection returned False")
         raise typer.Exit(code=1)
@@ -244,6 +313,21 @@ def run_backup(
     try:
         produced = execute_backup(dbtype, connector, str(backup_path), backup_type=backup_type)  # <-- Aquí pasamos el tipo de backup
         logger.info(f"Backup producido en: {produced}")
+    except DatabaseNotFoundError as e:
+        # El conector ya registró el detalle en el log; aquí mostramos un mensaje corto
+        logger.error(f"Fallo en la generación del backup - DB no encontrada: {e}")
+        typer.secho("❌ No se encontró la base de datos.", fg=typer.colors.RED)
+        history.add_entry(
+            operation="backup",
+            db_type=dbtype,
+            database=database,
+            file_path=None,
+            hash=None,
+            status="error",
+            message="database not found",
+            cloud_url=None,
+        )
+        raise typer.Exit(code=1)
     except Exception as e:
         logger.exception(f"Fallo en la generación del backup: {e}")
         typer.secho(f"❌ Error creando backup: {e}", fg=typer.colors.RED)

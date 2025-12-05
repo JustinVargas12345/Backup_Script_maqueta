@@ -1,13 +1,3 @@
-"""
-CloudStorage: implementación robusta y única.
-
-Este módulo expone `CloudStorage` en la ruta original `src.storage.cloud_storage.CloudStorage`.
-Características:
- - Importación perezosa de SDKs (mensajes claros si faltan)
- - Validación de configuración (bucket/container)
- - Reintentos con backoff para operaciones de red
- - Soporte por dict, URL (`s3://bucket?...`) o variables de entorno via `from_env`
-"""
 
 import logging
 import os
@@ -132,6 +122,13 @@ class CloudStorage:
         file = Path(src_path)
         if not file.exists():
             raise FileNotFoundError(f"Archivo '{src_path}' no existe")
+        
+        # Validar tamaño del archivo (advertencia si es muy grande)
+        file_size = file.stat().st_size
+        size_mb = file_size / (1024 * 1024)
+        if file_size > 5 * 1024 * 1024 * 1024:  # 5GB
+            logger.warning(f"Archivo grande ({size_mb:.1f} MB) será subido a {self.provider}. Puede tardar bastante.")
+        
         key = dest_name or file.name
 
         def _upload():
@@ -140,17 +137,21 @@ class CloudStorage:
                 bucket = self.config.get("bucket")
                 if not bucket:
                     raise ValueError("Falta 'bucket' en la configuración para AWS")
+                logger.info(f"Subiendo {file.name} a S3 ({size_mb:.1f} MB)...")
                 client.upload_file(str(file), bucket, key)
             elif self.provider == "gcp":
                 bucket = client.bucket(self.config.get("bucket"))
                 blob = bucket.blob(key)
+                logger.info(f"Subiendo {file.name} a GCS ({size_mb:.1f} MB)...")
                 blob.upload_from_filename(str(file))
             elif self.provider == "azure":
                 container = self.config.get("container")
                 container_client = client.get_container_client(container)
                 blob_client = container_client.get_blob_client(key)
+                logger.info(f"Subiendo {file.name} a Azure Blob ({size_mb:.1f} MB)...")
                 with open(file, "rb") as f:
                     blob_client.upload_blob(f, overwrite=True)
+            logger.info(f"Archivo subido exitosamente: {key}")
             return {"provider": self.provider, "bucket": self.config.get("bucket") or self.config.get("container"), "key": key}
 
         return self._retry(_upload)
@@ -162,6 +163,7 @@ class CloudStorage:
 
         def _download():
             client = self._ensure_client()
+            logger.info(f"Descargando {file_name} desde {self.provider}...")
             if self.provider == "aws":
                 client.download_file(self.config.get("bucket"), file_name, str(local_path))
             elif self.provider == "gcp":
@@ -173,6 +175,14 @@ class CloudStorage:
                 blob = container_client.get_blob_client(file_name)
                 data = blob.download_blob().readall()
                 local_path.write_bytes(data)
+            
+            # Validar descarga
+            if local_path.exists():
+                size_mb = local_path.stat().st_size / (1024 * 1024)
+                logger.info(f"Descarga completada: {file_name} ({size_mb:.1f} MB)")
+            else:
+                raise RuntimeError(f"Fallo descargando {file_name}: archivo no existe en destino")
+            
             return str(local_path)
 
         return self._retry(_download)
@@ -180,6 +190,7 @@ class CloudStorage:
     def delete_file(self, file_name: str) -> bool:
         def _delete():
             client = self._ensure_client()
+            logger.info(f"Eliminando {file_name} desde {self.provider}...")
             if self.provider == "aws":
                 client.delete_object(Bucket=self.config.get("bucket"), Key=file_name)
             elif self.provider == "gcp":
@@ -188,6 +199,7 @@ class CloudStorage:
             elif self.provider == "azure":
                 container_client = client.get_container_client(self.config.get("container"))
                 container_client.get_blob_client(file_name).delete_blob()
+            logger.info(f"Archivo eliminado exitosamente: {file_name}")
             return True
 
         try:
@@ -199,15 +211,18 @@ class CloudStorage:
     def list_files(self) -> List[str]:
         def _list():
             client = self._ensure_client()
+            logger.info(f"Listando archivos desde {self.provider}...")
             if self.provider == "aws":
                 res = client.list_objects_v2(Bucket=self.config.get("bucket"))
-                return [o["Key"] for o in res.get("Contents", [])]
+                files = [o["Key"] for o in res.get("Contents", [])]
             elif self.provider == "gcp":
                 bucket = client.bucket(self.config.get("bucket"))
-                return [b.name for b in bucket.list_blobs()]
+                files = [b.name for b in bucket.list_blobs()]
             elif self.provider == "azure":
                 container_client = client.get_container_client(self.config.get("container"))
-                return [b.name for b in container_client.list_blobs()]
+                files = [b.name for b in container_client.list_blobs()]
+            logger.info(f"Se encontraron {len(files)} archivos en {self.provider}")
+            return files
 
         return self._retry(_list)
 

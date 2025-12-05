@@ -11,7 +11,7 @@ from src.utils.db_selector import DatabaseSelector
 from src.utils import compress
 
 from src.storage.local_storage import LocalStorage
-from src.storage.cloud_storage_impl import CloudStorage
+from src.storage.cloud_storage import CloudStorage
 from src.utils.logger import setup_logger
 
 

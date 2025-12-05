@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from .errors import DatabaseNotFoundError
 
 
 class MongoConnector:
@@ -53,10 +54,10 @@ class MongoConnector:
                 self.log(f"mongodump detectado en ruta conocida: {p}")
                 return p
 
-        self.log("❌ ERROR: No se encontró mongodump")
-        raise FileNotFoundError(
-            "No se encontró mongodump en PATH ni en ubicaciones conocidas."
-        )
+        # No lanzar desde el constructor: devolver None y dejar que quien llame decida
+        # cómo manejar la ausencia del binario (por ejemplo, el CLI ya valida binarios).
+        self.log("❌ ERROR: No se encontró mongodump en PATH ni en ubicaciones conocidas.")
+        return None
 
     # --------------------------------------------------------
     # VALIDAR CONEXIÓN A MONGO (ping)
@@ -134,6 +135,10 @@ class MongoConnector:
             "--out", dump_dir
         ]
 
+        if not self.mongodump_path:
+            self.log("❌ ERROR: mongodump no disponible. No es posible realizar backup de MongoDB.")
+            raise FileNotFoundError("mongodump no disponible en el sistema. Instala MongoDB Database Tools.")
+
         # Log inicial
         self.log(f"=== INICIANDO BACKUP MONGO ({self.database}) ===")
         self.log("Comando ejecutado: " + " ".join(cmd))
@@ -155,6 +160,15 @@ class MongoConnector:
 
         # Validar OK
         if process.returncode != 0:
+            stderr_l = (process.stderr or "").lower()
+            # Buscar patrones comunes de "db not found"
+            if self.database and (self.database.lower() in stderr_l or 'no such' in stderr_l or 'does not exist' in stderr_l or 'not found' in stderr_l):
+                try:
+                    self.log(f"❌ ERROR: Base de datos no encontrada ({self.database}). STDERR: {process.stderr}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(process.stderr)
+
             self.log(f"❌ ERROR: mongodump terminó con código {process.returncode}")
             raise Exception(process.stderr)
 

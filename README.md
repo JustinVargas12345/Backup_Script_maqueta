@@ -218,17 +218,38 @@ python src/utils/bin_checker.py
 
 ---
 
-Si quieres, puedo:
-- Añadir un comando que verifique versiones de cada cliente (`psql --version`, etc.).
-- Ajustar el `Dockerfile` para incluir herramientas de SQL Server y/o versiones específicas.
-- Crear un script de instalación cross-platform (PowerShell + Bash) que intente instalar lo básico.
-
 ## Ejemplos prácticos de uso (comandos exactos)
 
 Los ejemplos siguientes están escritos para ejecutarse desde la raíz del repositorio usando PowerShell.
 
 - Nota general: el entrypoint del CLI es `python src/cli.py <grupo> <comando> ...`.
 
+
+**Uso Como Ejecutable**
+- **Ejecutable**: si compilas la aplicación con PyInstaller u otra herramienta, el binario puede llamarse `dbbackup.exe` (Windows) o `dbbackup` (Linux/macOS). Una vez compilado, el usuario ya no necesita invocar `python src/cli.py` — puede ejecutar directamente el binario.
+- **Opción compacta `--conn`**: el ejecutable acepta la opción `--conn` para pasar una cadena de conexión compacta (ej: `mysql://user:pass@host:3306/dbname`). Si la cadena incluye el esquema (`mysql`, `postgresql`, `mongodb`, `mssql`) el `--dbtype` puede inferirse automáticamente.
+- **Ejemplos (Windows PowerShell)**:
+  - MySQL (cadena de conexión):
+    `dbbackup.exe backup run --conn "mysql://root:MiPass@localhost:3306/mi_db" --outdir backups`
+  - PostgreSQL (cadena de conexión):
+    `dbbackup.exe backup run --conn "postgresql://postgres:MiPass@localhost:5432/postgres" --outdir backups`
+  - MongoDB (cadena de conexión):
+    `dbbackup.exe backup run --conn "mongodb://admin:MiPass@localhost:27017/Algoritmo" --outdir backups`
+  - SQL Server (cadena de conexión):
+    `dbbackup.exe backup run --conn "mssql://sa:MiPass@localhost:1433/mi_db" --outdir backups`
+- **Si no infiere el motor**: puedes seguir pasando `--dbtype` explícitamente junto a `--conn` (por ejemplo al usar esquemas no estándar):
+  `dbbackup.exe backup run --dbtype mysql --conn "mysql://user:pass@host/db"`
+- **Variables de entorno (alternativa más segura)**:
+  - Guardar la cadena en una variable y pasarla al ejecutable (PowerShell):
+    ```powershell
+    $env:DB_CONN = 'mysql://root:MiPass@localhost:3306/mi_db'
+    dbbackup.exe backup run --conn $env:DB_CONN --outdir backups
+    Remove-Item Env:DB_CONN
+    ```
+- **Mensajes y logs**: el binario mostrará mensajes cortos en la consola (por ejemplo: "❌ No se encontró la base de datos.") mientras que los detalles técnicos completos se registran en `backup_master_log`.
+- **Compilación rápida (ejemplo con PyInstaller)**: puedes crear un exe con:
+  `pyinstaller --onefile --name dbbackup src/cli.py`
+  El ejecutable resultante aparecerá en `dist/dbbackup.exe` (Windows) o `dist/dbbackup` (Linux/macOS).
 
 ---
 

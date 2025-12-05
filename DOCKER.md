@@ -45,13 +45,16 @@ sudo usermod -aG docker $USER
 La primera vez, necesitas "compilar" la imagen Docker. Esto descarga la base (`python:3.11`), instala paquetes (postgres-client, mysql-client, etc.) e incluye tu código.
 
 ```powershell
-cd C:\Users\Justin\dbbackup\Backup_Script_maqueta
+cd C:\path\to\Backup_Script_maqueta
 
-# Opción A: con Make
+# Opción A: con Make (si está instalado)
 make build-image
 
 # Opción B: con Docker directamente
 docker build -t backup_script:local .
+
+# Opción C: Incluir MongoDB tools (aumenta tamaño ~200MB)
+docker build --build-arg INSTALL_MONGO=true -t backup_script:local .
 ```
 
 **¿Qué hace?**
@@ -60,9 +63,9 @@ docker build -t backup_script:local .
 3. Instala paquetes del sistema (postgres-client, mysql-client, etc.) (~200 MB).
 4. Instala dependencias Python (`pip install -r requirements.txt`) (~100 MB).
 5. Copia el código fuente dentro de la imagen.
-6. Resultado: imagen comprimida `backup_script:local` (~600-800 MB).
+6. Resultado: imagen comprimida `backup_script:local` (~600 MB, ~800 MB con Mongo tools).
 
-**Tiempo**: 3-5 minutos la primera vez (después se cachea).
+**Tiempo**: 3-5 minutos la primera vez (después se cachea y es más rápido).
 
 ### 2️⃣ Ejecutar backups (RUN)
 

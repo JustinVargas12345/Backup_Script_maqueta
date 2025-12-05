@@ -173,6 +173,7 @@ $DockerRunArgs = @(
     "--rm",
     "-it",
     "-e", "PGPASSWORD=$Password",  # Para Postgres
+    "-e", "DB_PASSWORD=$Password",  # Variable genérica para la BD
     "-v", "$($BackupsDir):/app/backups",
     "-w", "/app",
     $ImageFullName,
@@ -192,15 +193,12 @@ if (-not [string]::IsNullOrWhiteSpace($Compress)) {
     $DockerRunArgs += "--compress", $Compress
 }
 
-if ($NotifySlack -and -not [string]::IsNullOrWhiteSpace($NotifySecret)) {
+if ($NotifySlack) {
     $DockerRunArgs += "--notify-slack"
-    # Pasar el secreto como variable de entorno
-    $DockerRunArgs = @("run", "--rm", "-it") + `
-        @("-e", "NOTIFY_SECRET=$NotifySecret") + `
-        @("-e", "PGPASSWORD=$Password") + `
-        @("-v", "$($BackupsDir):/app/backups") + `
-        @("-w", "/app") + `
-        $DockerRunArgs
+    if (-not [string]::IsNullOrWhiteSpace($NotifySecret)) {
+        # Insertar NOTIFY_SECRET después de las variables de entorno existentes
+        $DockerRunArgs = $DockerRunArgs[0..5] + @("-e", "NOTIFY_SECRET=$NotifySecret") + $DockerRunArgs[6..($DockerRunArgs.Length-1)]
+    }
 }
 
 if ($SkipBinaryCheck) {
@@ -216,17 +214,19 @@ if (-not [string]::IsNullOrWhiteSpace($Cloud)) {
 }
 
 # Ejecutar
+$ExitCode = 0
 try {
     & docker $DockerRunArgs
     $ExitCode = $LASTEXITCODE
 }
 catch {
     Write-Host "❌ Error ejecutando contenedor: $_" -ForegroundColor Red
-    exit 1
+    $ExitCode = 1
 }
 finally {
     # IMPORTANTE: Limpiar variables sensibles
     $null = Remove-Item -Path Env:PGPASSWORD -ErrorAction SilentlyContinue
+    $null = Remove-Item -Path Env:DB_PASSWORD -ErrorAction SilentlyContinue
     if (-not [string]::IsNullOrWhiteSpace($NotifySecret)) {
         $null = Remove-Item -Path Env:NOTIFY_SECRET -ErrorAction SilentlyContinue
     }

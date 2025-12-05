@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import shutil
 import traceback
+from .errors import DatabaseNotFoundError
 
 class MySQLConnector:
     LOG_FILE = "backup_master_log"
@@ -107,9 +108,14 @@ class MySQLConnector:
         except Exception as e:
             pass
 
-        raise FileNotFoundError(
-            "❌ No se encontró mysql.exe. Asegúrate de que MySQL Server está instalado o que 'mysql' está en PATH."
-        )
+        # No lanzar durante __init__; registrar y devolver None para que el
+        # llamador decida cómo actuar (la CLI valida binarios antes de ejecutar).
+        raise_msg = "❌ No se encontró mysql.exe. Asegúrate de que MySQL Server está instalado o que 'mysql' está en PATH."
+        try:
+            self.log("_find_mysql: " + raise_msg)
+        except Exception:
+            pass
+        return None
 
     # ----------------------------
     # BUSCAR mysqldump.exe
@@ -154,9 +160,13 @@ class MySQLConnector:
         except Exception as e:
             pass
 
-        raise FileNotFoundError(
-            "❌ No se encontró mysqldump.exe. Instala MySQL Server o agrega mysqldump al PATH."
-        )
+        # No lanzar durante __init__; devolver None y dejar que el dump falle más tarde.
+        raise_msg = "❌ No se encontró mysqldump.exe. Instala MySQL Server o agrega mysqldump al PATH."
+        try:
+            self.log("_find_mysqldump: " + raise_msg)
+        except Exception:
+            pass
+        return None
 
     # ----------------------------
     # VALIDAR CONEXIÓN
@@ -174,6 +184,14 @@ class MySQLConnector:
             f"-p{self.password}",
             "-e", "SELECT 1;"
         ]
+
+        # Si no tenemos `mysql` disponible, no intentamos ejecutar y retornamos False.
+        if not self.mysql_path:
+            try:
+                self.log("❌ validate_connection: 'mysql' no disponible en el sistema.")
+            except Exception:
+                pass
+            return False
 
         self.log(f"Validando conexión MySQL con: {' '.join(cmd)}")
         if self.verbose:
@@ -288,6 +306,14 @@ class MySQLConnector:
                 self.log(f"❌ Error ejecutando mysqldump: {e}\n{tb}")
             else:
                 self.log(f"❌ Error ejecutando mysqldump: {e}")
+            # Si el error indica que la base de datos no existe, lanzar DatabaseNotFoundError
+            msg = str(e).lower()
+            if self.database and (self.database.lower() in msg or "unknown database" in msg or "1049" in msg or "does not exist" in msg or "doesn't exist" in msg):
+                try:
+                    self.log(f"❌ Detalle error - posible DB no encontrada ({self.database}): {e}\n{tb}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(str(e)) from e
             raise
 
         # Si capture_output está activo podemos loguear el stdout completo
@@ -301,7 +327,25 @@ class MySQLConnector:
             self.log(f"STDERR:\n{process.stderr}")
 
         if process.returncode != 0:
+            # Detectar si es error por base de datos inexistente
+            stderr_l = (process.stderr or "").lower()
+            db_not_found_patterns = [f"unknown database '{self.database.lower()}'" if self.database else "unknown database", "unknown database", "error 1049", "er_bad_db_error", "does not exist", "doesn't exist"]
+            if any(p in stderr_l for p in db_not_found_patterns):
+                try:
+                    self.log(f"❌ ERROR: Base de datos no encontrada: {self.database}. STDERR: {process.stderr}")
+                except Exception:
+                    pass
+                raise DatabaseNotFoundError(process.stderr)
+
             self.log(f"❌ ERROR: mysqldump terminó con código {process.returncode}")
+            # Si no hay mysqldump disponible, informar y lanzar FileNotFoundError
+            if not self.mysqldump_path:
+                try:
+                    self.log("❌ ERROR: mysqldump no disponible. No se puede generar backup MySQL.")
+                except Exception:
+                    pass
+                raise FileNotFoundError("mysqldump no disponible en el sistema. Instala MySQL Database Tools.")
+
             raise Exception(f"mysqldump error:\n{process.stderr}")
 
         self.log(f"✔️ Backup MySQL completado: {output_path}")
